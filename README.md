@@ -14,14 +14,11 @@ Open it with the toolbar icon or **⌘⇧L** (Ctrl+Shift+L on Windows).
 
 ### Part 1: Get the files
 
-1. Open the repo link your teammate sent you. Sign in to GitHub if it asks. If you see "404", ask to be added to the repo.
-2. Click the big green **Code** button.
-3. Click **Download ZIP**. A file called `kw-time-logger-main.zip` lands in your **Downloads** folder.
-4. Open your **Downloads** folder. Right-click the ZIP and choose **Extract All...**, then click **Extract**.
-5. A normal folder opens. Inside it, look for the folder that has a file called `manifest.json` in it. **That** is your extension folder.
-6. Move that folder somewhere permanent, like `Documents`. Do not rename it and **never move or delete it again**. Chrome needs it to stay there.
-
-> There is also a ready-made `kw-time-logger.zip` in the repo. Click it, then click the download icon, if you prefer a smaller file. Extract it the same way.
+1. Open the [latest release](https://github.com/liamcarvalho-kilowott/kw-time-logger/releases/latest). Sign in to GitHub if it asks. If you see "404", ask to be added to the repo.
+2. Scroll down to **Assets** and click **kw-time-logger.zip**. It lands in your **Downloads** folder.
+3. Open your **Downloads** folder. Right-click the ZIP and choose **Extract All...**. Change the destination to a permanent place like `Documents\kw-time-logger`, then click **Extract**.
+4. The folder you extracted into is your extension folder. It has `manifest.json` right inside it.
+5. Do not rename or move that folder after this. Chrome needs it to stay there.
 
 ### Part 2: Plug the folder into Chrome
 
@@ -42,7 +39,7 @@ The settings page walks you through it with copy buttons. In short:
 
 ### Updating later
 
-Download the new ZIP, extract it, and copy the files **over the old folder** (same folder, same place). Then go to `chrome://extensions` and click the round **reload** arrow on KW Time Logger.
+Download the new ZIP from the latest release, extract it, and copy the files **over the old folder** (same folder, same place). Then go to `chrome://extensions` and click the round **reload** arrow on KW Time Logger.
 
 > Chrome builds the extension's ID, and therefore the Zoho redirect URI, from the folder path. If you move the folder, update the redirect URI in Zoho.
 
