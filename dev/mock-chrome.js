@@ -38,7 +38,9 @@
       },
       onChanged: { addListener: (fn) => listeners.push(fn) },
     },
+    permissions: { request: async () => true },
     runtime: {
+      getManifest: () => ({ host_permissions: [] }),
       openOptionsPage: () => (location.href = "/options.html"),
       sendMessage: async (msg) => {
         await new Promise((r) => setTimeout(r, 400));

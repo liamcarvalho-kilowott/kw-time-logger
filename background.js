@@ -89,15 +89,14 @@ async function catchUp() {
 }
 
 function notify(id, title, message, buttons) {
-  chrome.notifications.create(id, {
-    type: "basic",
-    iconUrl: "icons/icon128.png",
-    title,
-    message,
-    buttons,
-    priority: 2,
-    requireInteraction: Boolean(buttons),
-  });
+  const plain = { type: "basic", iconUrl: "icons/icon128.png", title, message };
+  const full = { ...plain, buttons, priority: 2, requireInteraction: Boolean(buttons) };
+  // Firefox rejects buttons/priority/requireInteraction, so fall back to a plain notification.
+  try {
+    Promise.resolve(chrome.notifications.create(id, full)).catch(() => chrome.notifications.create(id, plain));
+  } catch {
+    chrome.notifications.create(id, plain);
+  }
 }
 
 async function openQueue() {

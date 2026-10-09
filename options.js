@@ -90,6 +90,8 @@ async function save(patch) {
 }
 
 async function connect() {
+  // Firefox doesn't grant host permissions at install; this asks (needs the click) and is instant in Chrome.
+  await chrome.permissions.request({ origins: chrome.runtime.getManifest().host_permissions }).catch(() => {});
   await save({
     accountsServer: $("region").value,
     clientId: $("clientId").value.trim(),

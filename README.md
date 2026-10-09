@@ -37,6 +37,12 @@ The settings page walks you through it with copy buttons. In short:
 2. In the Zoho API Console, create a **Server-based Application**. Paste in the redirect URI shown on the settings page. Then copy the Client ID and Secret back into the settings page.
 3. Click **Connect Zoho** and approve the access request.
 
+### Other browsers
+
+- **Brave and Microsoft Edge:** they are Chrome under the hood, so use the same `kw-time-logger.zip` and the same steps. Open `brave://extensions` or `edge://extensions` instead of `chrome://extensions`.
+- **Internet Explorer:** it was retired in 2022 and never supported extensions like this. Use Edge instead.
+- **Firefox:** use `kw-time-logger-firefox.zip` from the release, extract it, then open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and pick the `manifest.json` inside the folder. Firefox forgets temporary add-ons when it closes, so you repeat this each time, unless you sign the add-on for free at addons.mozilla.org (choose "On your own"). When you click **Connect Zoho**, allow the permission request that Firefox shows. The Zoho redirect URI on the settings page is different from Chrome's, so add it in the Zoho API Console. In Firefox the end-of-day notification has no Send button; click it to open the queue.
+
 ### Updating later
 
 Download the new ZIP from the latest release, extract it, and copy the files **over the old folder** (same folder, same place). Then go to `chrome://extensions` and click the round **reload** arrow on KW Time Logger.

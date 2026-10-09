@@ -86,6 +86,10 @@ First real test: connect, then log **one** small entry with **Log now** and chec
 - **Light mode only:** all dark-mode CSS was removed and `--bg` is white.
 - **Distribution:** private repo `liamcarvalho-kilowott/kw-time-logger`; teammates download `kw-time-logger.zip` from the latest GitHub release and use Load unpacked. Releases so far: v0.1.0 to v0.1.2. To release: bump `version` in `manifest.json` and `package.json`, rebuild the ZIP (manifest at the ZIP root; only manifest, JS/HTML/CSS, `src/`, `icons/`, `fonts/`), commit with `git add -f kw-time-logger.zip`, push, then `gh release create`.
 
+## Firefox, Edge, Brave
+
+Edge and Brave (Chromium) run the normal build. Firefox uses `manifest.firefox.json` (background.scripts instead of a service worker, fixed gecko id `kw-time-logger@kilowott.com`, min Firefox 121). Everything else is shared. `python scripts/build-zips.py` makes `kw-time-logger.zip` and `kw-time-logger-firefox.zip`; keep the version in both manifests in sync. Firefox does not grant host permissions at install, so `connect()` in `options.js` requests them; `notify()` in `background.js` falls back to a plain notification because Firefox rejects buttons. **Firefox is untested in a real browser.** Internet Explorer is not supported (it is retired).
+
 ## Open questions / next ideas
 
 - v2: activity suggestions from tab/site time; show hours already logged in Zoho today (`GET .../projects/{id}/logs/`); start/stop timer; menu-bar app with a global hotkey reusing `src/`.
