@@ -47,6 +47,7 @@ async function init() {
     });
     $(id).addEventListener("input", updateBadges);
   }
+  $("testNote").onclick = () => chrome.runtime.sendMessage({ type: "test-notification" });
   $("endOfDay").onchange = () => $("endOfDay").value && save({ endOfDay: $("endOfDay").value });
   for (const r of document.querySelectorAll('input[name="mode"]')) r.onchange = () => save({ autoSubmit: r.value === "auto" });
 

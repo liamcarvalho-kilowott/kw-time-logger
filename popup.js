@@ -3,6 +3,7 @@ import { getMyTasks, isSignedIn, NotSignedIn } from "./src/zoho.js";
 import { enqueue, updateQueued, removeQueued, summarize } from "./src/logbook.js";
 import { localParse } from "./src/match.js";
 import { addTodo, updateTodo, toggleTodo, removeTodo, clearDone } from "./src/todos.js";
+import { attachDatePicker } from "./src/datepicker.js";
 import { isoDate, parseDuration, humanDuration, humanDate, toHHMM } from "./src/time.js";
 
 const $ = (id) => document.getElementById(id);
@@ -160,6 +161,7 @@ function wireForm() {
       saveDraft();
     };
   }
+  attachDatePicker($("date"));
   $("date").onchange = saveDraft;
   $("notes").oninput = saveDraft;
   $("say").oninput = saveDraft;
@@ -681,9 +683,39 @@ function renderToday() {
     const sent = history.filter((e) => e.date === today).reduce((s, e) => s + e.minutes, 0);
     const queued = queue.filter((e) => e.date === today).reduce((s, e) => s + e.minutes, 0);
     const pill = $("todayTotal");
-    pill.textContent = `Today ${humanDuration(sent + queued)}`;
+    const total = sent + queued;
+    pill.textContent = `Today ${humanDuration(total)}${total >= FULL_DAY ? " ✅" : ""}`;
     pill.title = `${humanDuration(sent)} sent to Zoho, ${humanDuration(queued)} queued`;
+    if (total >= FULL_DAY) celebrate(today);
   });
+}
+
+const FULL_DAY = 8 * 60;
+const CHEERS = [
+  ["🎉 8 hours. Done.", "Timesheet complete. Close the laptop. Touch grass."],
+  ["🏆 Full day logged!", "Your timesheet is perfect. Your manager is quietly proud."],
+  ["🚀 8 hours in the bag", "You've officially out-logged the timesheet fairy."],
+  ["🥳 Timesheet: 100%", "Nothing left to log. Treat yourself to a snack."],
+];
+
+/** Confetti plus a pop-up, once per day, the first time today's hours reach 8. */
+async function celebrate(today) {
+  if ((await get("celebrated")) === today) return;
+  await set("celebrated", today);
+  const [title, text] = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  const cheer = el("div", { class: "cheer" }, el("b", {}, title), el("span", {}, text));
+  const remove = () => cheer.remove();
+  cheer.onclick = remove;
+  document.body.append(cheer);
+  setTimeout(remove, 5000);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const colors = ["#ffd60a", "#7cc6fe", "#8ff0a4", "#ff8fab", "#ffb347"];
+  for (let i = 0; i < 50; i++) {
+    const c = el("i", { class: "confetti" });
+    c.style.cssText = `left:${Math.random() * 100}%;background:${colors[i % colors.length]};animation-delay:${Math.random() * 0.8}s`;
+    document.body.append(c);
+    setTimeout(() => c.remove(), 3500);
+  }
 }
 
 function groupByDate(entries) {

@@ -25,15 +25,47 @@ async function scheduleEndOfDay() {
   await chrome.alarms.create(ALARM, { when: at.getTime() });
 }
 
+// Funny notifications. {s} is replaced with a summary like "3 entries, 5h 30m".
+const JOKES = {
+  empty: [
+    ["⚡ Zero hours logged?", "Either you napped all day or the timesheet fairy works nights. Log something!"],
+    ["🦗 It's quiet in here…", "Your queue is emptier than the office at 6:31 PM on a Friday. What did you do today?"],
+    ["🕵️ Zoho is watching", "…and it sees no hours from you today. Just kidding. Mostly. Go log your time!"],
+    ["📉 Today's logged hours: none", "Future you will thank present you. Log it now, before you forget what you did."],
+  ],
+  review: [
+    ["⚡ Your hours are getting restless", "{s} waiting for Zoho. Don't leave them on read!"],
+    ["⏰ Clock-out o'clock", "{s} ready to send. One click and you're a timesheet legend."],
+    ["🧾 Friendly nudge from your timesheet", "{s} ready for Zoho. It's been waiting patiently. Mostly."],
+  ],
+  sent: [
+    ["🎉 Hours delivered!", "{s} landed in Zoho. Your manager just smiled somewhere."],
+    ["✅ Timesheet: handled", "{s} sent. Go touch some grass."],
+    ["🚀 Zoho received your hours", "{s} sent. You're basically a productivity influencer."],
+  ],
+  failed: [
+    ["💥 Zoho said no", "{n} sent, {f} bounced: {e}. Open the queue and give them another go."],
+    ["🙈 Some hours got lost on the way", "{n} sent, {f} failed: {e}. Open the queue to retry."],
+  ],
+};
+
+const joke = (kind, vars = {}) => {
+  const [title, text] = JOKES[kind][Math.floor(Math.random() * JOKES[kind].length)];
+  return [title, text.replace(/\{(\w)\}/g, (_, k) => vars[k] ?? "")];
+};
+
 async function runEndOfDay() {
   const today = isoDate();
   await set("lastEndOfDay", today);
   const due = (await get("queue")).filter((e) => e.date <= today);
-  if (!due.length) return;
+  if (!due.length) {
+    notify(NOTE_RESULT, ...joke("empty")); // always say something, even when there's nothing to send
+    return;
+  }
 
   const { autoSubmit } = await getSettings();
   if (!autoSubmit) {
-    notify(NOTE_REVIEW, "⚡ Time to send your hours", `${summarize(due)} ready for Zoho.`, [{ title: "Send now" }, { title: "Review" }]);
+    notify(NOTE_REVIEW, ...joke("review", { s: summarize(due) }), [{ title: "Send now" }, { title: "Review" }]);
     return;
   }
   const { sent, failed } = await sendQueue(due.map((e) => e.id));
@@ -42,9 +74,9 @@ async function runEndOfDay() {
 
 function reportResult(sent, failed) {
   if (failed.length) {
-    notify(NOTE_RESULT, "⚡ Some hours didn't reach Zoho", `${sent.length} sent, ${failed.length} failed: ${failed[0].error}`, [{ title: "Review" }]);
+    notify(NOTE_RESULT, ...joke("failed", { n: sent.length, f: failed.length, e: failed[0].error }), [{ title: "Review" }]);
   } else if (sent.length) {
-    notify(NOTE_RESULT, "⚡ Hours logged in Zoho", `${summarize(sent)} sent.`);
+    notify(NOTE_RESULT, ...joke("sent", { s: summarize(sent) }));
   }
 }
 
@@ -124,6 +156,10 @@ onChange(["queue"], updateBadge);
 onChange(["settings"], scheduleEndOfDay);
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+  if (msg?.type === "test-notification") {
+    notify("test", ...joke("empty"));
+    return false;
+  }
   const run = {
     "send-queue": () => sendQueue(msg.ids),
     "send-now": () => sendNow(msg.entry).then((zohoLogId) => ({ zohoLogId })),
