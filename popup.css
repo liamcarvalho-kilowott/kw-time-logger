@@ -132,3 +132,8 @@ label.field > span.row { display: flex; }
 .cheer { position: fixed; z-index: 60; left: 50%; top: 40%; transform: translate(-50%, -50%) rotate(-2deg); width: 300px; padding: 16px; text-align: center; border: var(--border); border-radius: var(--radius); background: var(--volt); color: var(--volt-ink); box-shadow: var(--shadow-lg); animation: cheer-pop 0.35s ease-out; cursor: pointer; }
 .cheer b { display: block; font-size: 22px; letter-spacing: -0.01em; }
 @keyframes cheer-pop { from { transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); } }
+
+/* Six tabs have to fit in 390px. */
+.tabs { gap: 1px; padding: 10px 6px 0; }
+.tabs button { padding: 6px 7px 8px; font-size: 12px; gap: 4px; }
+.tabs button[aria-selected="true"] { padding-bottom: 10.5px; }

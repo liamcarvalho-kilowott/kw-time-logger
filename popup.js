@@ -4,6 +4,7 @@ import { enqueue, updateQueued, removeQueued, summarize } from "./src/logbook.js
 import { localParse } from "./src/match.js";
 import { addTodo, updateTodo, toggleTodo, removeTodo, clearDone } from "./src/todos.js";
 import { initAssign } from "./src/assign.js";
+import { initNotes } from "./src/notes.js";
 import { attachDatePicker } from "./src/datepicker.js";
 import { isoDate, parseDuration, humanDuration, humanDate, toHHMM } from "./src/time.js";
 
@@ -55,6 +56,7 @@ async function init() {
   renderTodos(await get("todos"));
   renderToday();
   initAssign();
+  initNotes();
   onChange(["todos"], async () => renderTodos(await get("todos")));
   onChange(["queue", "history"], async () => {
     renderQueue(await get("queue"));

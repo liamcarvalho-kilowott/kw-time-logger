@@ -7,6 +7,7 @@ A Chrome extension for logging hours to your Zoho Projects tasks without opening
 - **Queue:** entries wait until your end-of-day time (default 6:30 PM). Then they're either sent to Zoho automatically or you get a reminder to send them. **Log now** skips the queue.
 - **Todo:** a personal checklist. Optionally link a todo to one of your Zoho tasks. **⏱ Log** on a todo opens the Log tab with that task selected and the todo text as the comment, so you only add the hours. Double-click a todo to edit it. Todos stay in this browser and are never sent to Zoho.
 - **Assign (managers):** create a task in any project and assign it to a project member, with task list, description, due date, priority and estimated hours. Zoho decides who is allowed, so non-managers just see Zoho's error. After updating from an older version, click **Disconnect** then **Connect Zoho** once so Zoho can grant the new permissions.
+- **Notes:** two free-text boxes, "Tasks to add" and "Ask Mr. Ehours for", saved as you type. They stay in this browser and are never sent anywhere.
 - **Sent:** shows what went to Zoho, grouped by day. The toolbar badge shows how many entries are queued, and turns red if one failed.
 
 Open it with the toolbar icon or **⌘⇧L** (Ctrl+Shift+L on Windows).

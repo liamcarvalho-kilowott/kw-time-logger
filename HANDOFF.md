@@ -86,6 +86,10 @@ First real test: connect, then log **one** small entry with **Log now** and chec
 - **Light mode only:** all dark-mode CSS was removed and `--bg` is white.
 - **Distribution:** private repo `liamcarvalho-kilowott/kw-time-logger`; teammates download `kw-time-logger.zip` from the latest GitHub release and use Load unpacked. Releases so far: v0.1.0 to v0.1.2. To release: bump `version` in `manifest.json` and `package.json`, rebuild the ZIP (manifest at the ZIP root; only manifest, JS/HTML/CSS, `src/`, `icons/`, `fonts/`), commit with `git add -f kw-time-logger.zip`, push, then `gh release create`.
 
+## Notes tab
+
+`src/notes.js`: two textareas (`notesAdd`, `notesAsk`) autosaved to the `notes` storage key as `{add, ask}`. The "Mr. Ehours" label is hardcoded in `popup.html`. The tab bar was tightened in `popup.css` to fit six tabs in 390px.
+
 ## Assign tab (managers)
 
 `src/assign.js` (UI) + `listProjects/listProjectUsers/listTasklists/createTask` at the end of `src/zoho.js`. Uses the v1 REST API: `POST /restapi/portal/{p}/projects/{id}/tasks/` with `name`, `person_responsible` (ZPUID), `description`, `tasklist_id`, `priority`, `start_date`/`end_date` (MM-DD-YYYY), `duration` + `duration_type=hours`. New scopes: `ZohoProjects.tasks.CREATE`, `users.READ`, `tasklists.READ`, so everyone must Disconnect/Connect once. **Never run against real Zoho**: the response shapes and the `duration_type` value are from memory of the docs; tested only with mocked responses. The tab shows for everyone; Zoho's permissions decide who can create.

@@ -32,6 +32,7 @@ const DEFAULTS = {
   queue: [], // entries waiting for end of day
   history: [], // entries sent to Zoho (newest first, capped)
   lastDraft: null,
+  notes: { add: "", ask: "" }, // free-text scratch notes, local only
   todos: [], // { id, text, taskId, done, createdAt, doneAt }
 };
 

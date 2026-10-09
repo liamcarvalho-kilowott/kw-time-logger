@@ -32,6 +32,7 @@
         <button role="tab" data-tab="queue">Queue <span id="queueCount" class="count hidden"></span></button>
         <button role="tab" data-tab="sent">Sent</button>
         <button role="tab" data-tab="assign">Assign</button>
+        <button role="tab" data-tab="notes">Notes</button>
       </nav>
 
       <section data-view="log" class="view">
@@ -125,6 +126,14 @@
 
       <section data-view="sent" class="view hidden">
         <div id="sentList" class="list"></div>
+      </section>
+
+      <section data-view="notes" class="view hidden">
+        <div class="stack">
+          <label class="field"><span>Tasks to add</span><textarea id="notesAdd" rows="6" placeholder="Tasks I need to add to Zoho or log"></textarea></label>
+          <label class="field"><span>Ask Mr. Ehours for</span><textarea id="notesAsk" rows="6" placeholder="Tasks I need to ask Mr. Ehours to assign me"></textarea></label>
+          <p class="small muted" style="margin: 0">Saved automatically, only in this browser.</p>
+        </div>
       </section>
 
       <section data-view="assign" class="view hidden">

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KW Time Logger ⚡",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Log hours to your Zoho Projects tasks in a few seconds, or type them in plain English.",
   "icons": {
     "16": "icons/icon16.png",
