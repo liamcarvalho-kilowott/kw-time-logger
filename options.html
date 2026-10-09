@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KW Time Logger ⚡ settings</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .wrap { max-width: 680px; margin: 0 auto; padding: 36px 16px 64px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+    header .bolt { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border: var(--border); border-radius: var(--radius); background: #111; font-size: 28px; box-shadow: var(--shadow); transform: rotate(-4deg); }
+    header h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; line-height: 1.1; }
+    header h1 mark { background: var(--volt); color: #111; padding: 0 6px; border: var(--border); border-radius: 4px; box-shadow: var(--shadow-sm); }
+    header p { margin: 6px 0 0; font: 12px var(--mono); }
+
+    section.card { padding: 20px; margin-bottom: 22px; }
+    section.start { background: var(--volt); color: #111; }
+    section.start .muted { color: #3a3300; }
+    section.start code { background: rgba(255, 255, 255, 0.55); }
+    h2 { margin: 0 0 6px; font-size: 17px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.01em; }
+    h2 .num { display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none; border: var(--border); border-radius: 50%; background: var(--volt); color: #111; font: 700 13px var(--mono); box-shadow: var(--shadow-sm); }
+    h2 .pill { margin-left: auto; }
+    h3 { margin: 0 0 4px; font-size: 14px; }
+    section > p { margin: 0 0 14px; }
+    section p.lead { margin-bottom: 12px; }
+    ul.plain { margin: 0 0 12px; padding-left: 20px; }
+    ul.plain li { margin-bottom: 4px; }
+
+    /* Lettered sub-steps, so they don't get confused with the big numbered sections. */
+    .steps { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: s; }
+    .steps > li { counter-increment: s; position: relative; padding: 12px 12px 12px 52px; border: var(--border); border-radius: var(--radius); background: var(--surface); }
+    .steps > li::before { content: counter(s, upper-alpha); position: absolute; left: 12px; top: 12px; display: grid; place-items: center; width: 28px; height: 28px; border: var(--border); border-radius: 6px; background: var(--sky); color: #111; font: 700 13px var(--mono); }
+    .steps p { margin: 0; }
+    .steps p + p { margin-top: 6px; }
+    .steps .see { margin-top: 8px; padding: 6px 8px; border-left: 4px solid var(--volt); background: var(--surface-2); font-size: 12px; }
+    .steps .see b { text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; margin-right: 4px; }
+
+    .copyrow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .copyrow input { font-family: var(--mono); font-size: 12px; background: var(--surface-2); }
+    .note { margin: 0 0 14px; padding: 8px 10px; border: 2px dashed var(--ink); border-radius: var(--radius); font-size: 12px; }
+    .note.warn { border-style: solid; background: var(--orange); color: #111; font-weight: 600; }
+
+    table.regions { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    table.regions th, table.regions td { padding: 5px 8px; border: 2px solid var(--ink); text-align: left; }
+    table.regions th { background: var(--surface-2); text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+    table.regions td:first-child { font-family: var(--mono); }
+
+    .status { display: flex; align-items: center; gap: 10px; padding: 12px; border: var(--border); border-radius: var(--radius); background: var(--surface-2); }
+    .dot { width: 12px; height: 12px; border: 2px solid var(--ink); border-radius: 50%; background: var(--danger); flex: none; }
+    .dot.on { background: var(--mint); }
+    #statusText { font-weight: 700; }
+    #statusSub { font-family: var(--mono); }
+
+    .radio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin-top: 8px; border: var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; transition: background 0.1s, box-shadow 0.1s; }
+    .radio:has(input:checked) { background: var(--volt); color: #111; box-shadow: var(--shadow-sm); }
+    .radio:has(input:checked) .muted { color: #333; }
+    .radio input { margin-top: 3px; accent-color: #111; }
+
+    details > summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+    details.fix { padding: 10px 12px; margin-top: 8px; border: var(--border); border-radius: var(--radius); background: var(--surface); }
+    details.fix[open] { background: var(--surface-2); }
+    details.fix > :not(summary) { margin: 8px 0 0; font-size: 13px; }
+    details.fix ol, details.fix ul { padding-left: 20px; }
+
+    .saved { position: fixed; right: 20px; bottom: 20px; padding: 6px 12px; border: var(--border); border-radius: var(--radius); background: var(--mint); color: #111; font-weight: 700; box-shadow: var(--shadow-sm); transition: opacity 0.3s; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="bolt" aria-hidden="true">⚡</span>
+      <div>
+        <h1><mark>KW</mark> Time Logger</h1>
+        <p class="muted">Settings and tokens stay in this browser.</p>
+      </div>
+    </header>
+
+    <section class="card start">
+      <h2><span aria-hidden="true">👋</span>Start here</h2>
+      <p class="lead">This extension logs your hours to Zoho Projects, so you never have to open Zoho to fill in a timesheet. <b>Setup takes about 5 minutes and you only do it once.</b></p>
+      <p style="margin-bottom: 6px"><b>You'll need:</b></p>
+      <ul class="plain">
+        <li>Your Zoho login: the same email and password you use for Zoho Projects.</li>
+        <li>This page and a second browser tab for Zoho. No coding and no installs.</li>
+      </ul>
+      <p class="muted" style="margin: 0">Why the extra steps? Zoho doesn’t let a program log in with just your password. Instead, you create a small private “key” in your own Zoho account (steps A–F below) and give it to this extension. Nobody else gets it, and you can delete it in Zoho whenever you like.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">1</span>Create your Zoho key <span id="badge1" class="pill hidden">✓ Done</span></h2>
+      <p class="muted">Follow the lettered steps in order. Each one is a small copy and paste.</p>
+
+      <ol class="steps">
+        <li>
+          <h3>Find out which Zoho you use</h3>
+          <p>Open Zoho Projects the way you normally do and look at the web address at the top of the browser. Pick the matching line here:</p>
+          <label class="field" style="margin-top: 8px">
+            <span>My Zoho Projects address starts with…</span>
+            <select id="region"></select>
+          </label>
+          <details class="fix" style="margin-top: 10px">
+            <summary>Not sure? Match your address to this table</summary>
+            <table class="regions">
+              <thead><tr><th>Address in your browser</th><th>Pick</th></tr></thead>
+              <tbody>
+                <tr><td>projects.zoho.in</td><td>India</td></tr>
+                <tr><td>projects.zoho.com</td><td>United States</td></tr>
+                <tr><td>projects.zoho.eu</td><td>Europe</td></tr>
+                <tr><td>projects.zoho.com.au</td><td>Australia</td></tr>
+                <tr><td>projects.zoho.jp</td><td>Japan</td></tr>
+                <tr><td>projects.zohocloud.ca</td><td>Canada</td></tr>
+                <tr><td>projects.zoho.sa</td><td>Saudi Arabia</td></tr>
+                <tr><td>projects.zoho.com.cn</td><td>China</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </li>
+
+        <li>
+          <h3>Open Zoho's API Console</h3>
+          <p>Click the yellow button. It opens a new tab. Sign in if Zoho asks, using the <b>same account</b> you use for Zoho Projects.</p>
+          <p style="margin-top: 10px"><a id="consoleLink" class="btn primary" href="https://api-console.zoho.in" target="_blank" rel="noopener" style="text-decoration: none">Open Zoho API Console ↗</a></p>
+          <div class="see"><b>You'll see</b> a page titled “API Console” with a list of client types or an <i>Add Client</i> button.</div>
+        </li>
+
+        <li>
+          <h3>Start a new client</h3>
+          <p>Click <b>Add Client</b> (or <b>Get Started</b> if this is your first time). Then choose <b>Server-based Applications</b>.</p>
+          <div class="see"><b>You'll see</b> a form asking for a client name, a homepage address and a redirect address.</div>
+        </li>
+
+        <li>
+          <h3>Fill in the form</h3>
+          <p>Use the Copy buttons so nothing gets mistyped. Paste each one into the matching box on Zoho's form.</p>
+          <p style="margin-top: 10px"><b>Client Name</b></p>
+          <div class="copyrow"><input type="text" readonly value="KW Time Logger" /><button class="btn sm" type="button" data-copy>Copy</button></div>
+          <p style="margin-top: 10px"><b>Homepage URL</b> <span class="muted small">(Zoho needs something here; it isn't used)</span></p>
+          <div class="copyrow"><input type="text" readonly value="https://example.com" /><button class="btn sm" type="button" data-copy>Copy</button></div>
+          <p style="margin-top: 10px"><b>Authorized Redirect URIs</b></p>
+          <div class="copyrow"><input id="redirect" type="text" readonly /><button id="copyRedirect" class="btn sm" type="button" data-copy>Copy</button></div>
+          <div class="note warn" style="margin-top: 10px">The redirect address must match exactly, with no spaces before or after it. If it's wrong, connecting will fail with a “redirect” error.</div>
+        </li>
+
+        <li>
+          <h3>Click Create</h3>
+          <p>Press the <b>Create</b> button at the bottom of Zoho's form.</p>
+          <div class="see"><b>You'll see</b> your new client open on a page with tabs such as <i>Client Secret</i>.</div>
+        </li>
+
+        <li>
+          <h3>Copy your Client ID and Client Secret into the boxes below</h3>
+          <p>On Zoho's page, open the <b>Client Secret</b> tab. You'll see two long strings of letters and numbers. Copy each one and paste it here:</p>
+          <div class="stack" style="margin-top: 10px">
+            <label class="field"><span>Client ID</span><input id="clientId" type="text" spellcheck="false" autocomplete="off" placeholder="Starts with 1000." /></label>
+            <label class="field"><span>Client Secret</span><input id="clientSecret" type="password" spellcheck="false" autocomplete="off" /></label>
+          </div>
+          <p class="muted small" style="margin-top: 8px">Boxes save as you go. The secret is like a password: don't share it or post it anywhere.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">2</span>Connect your Zoho account <span id="badge2" class="pill hidden">✓ Done</span></h2>
+      <p class="muted">Finish step 1 first. Then click <b>Connect Zoho</b> and a small Zoho window will pop up.</p>
+      <ul class="plain">
+        <li>Sign in if it asks.</li>
+        <li>Zoho shows a screen saying <b>KW Time Logger</b> wants access. Click <b>Accept</b>. It asks only to read your projects, tasks and time logs, and to add time logs. It can't delete anything or change your tasks.</li>
+        <li>The window closes by itself and the box below turns green.</li>
+      </ul>
+      <div class="status">
+        <span id="statusDot" class="dot"></span>
+        <div class="grow">
+          <div id="statusText">Not connected</div>
+          <div id="statusSub" class="small muted"></div>
+        </div>
+        <button id="connectBtn" class="btn primary" type="button">Connect Zoho</button>
+        <button id="disconnectBtn" class="btn hidden" type="button">Disconnect</button>
+      </div>
+      <div id="portalRow" class="hidden" style="margin-top: 14px">
+        <label class="field"><span>Which Zoho workspace (portal)?</span><select id="portal"></select></label>
+        <p class="muted small" style="margin: 6px 0 0">Your Zoho account belongs to more than one. Pick the one your projects are in.</p>
+      </div>
+      <div id="connectMsg" class="banner hidden" style="margin-top: 12px"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">3</span>When should your hours go to Zoho?</h2>
+      <p class="muted">When you add an entry, it waits in a queue. At the time below each day, the queue is handled for you. If your computer is asleep or Chrome is closed then, it happens the next time Chrome opens. Each entry keeps the date you gave it.</p>
+      <label class="field" style="max-width: 180px; margin-bottom: 8px"><span>Time</span><input id="endOfDay" type="time" /></label>
+      <label class="radio"><input type="radio" name="mode" value="auto" /><span><b>Send automatically</b><br /><span class="small muted">Everything in the queue goes to Zoho and you get a notification.</span></span></label>
+      <label class="radio"><input type="radio" name="mode" value="ask" /><span><b>Remind me first</b><br /><span class="small muted">You get a notification with a Send button, so you can check the entries first.</span></span></label>
+      <p class="muted small" style="margin: 10px 0 0">You can also skip the queue any time with <b>Log now</b> in the popup.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">4</span>Smarter typing <span class="pill">Optional</span></h2>
+      <p class="muted">You can skip this step. The extension works fine without it.</p>
+      <p>The <b>⚡ Type it</b> box lets you write something like <i>“2h on the checkout bug and 30m team meeting yesterday”</i>. Without anything here, it matches your words to your tasks on your own computer, which works for simple sentences. With a Gemini key, Gemini reads the sentence, picks the right tasks, splits it into separate entries and writes a tidy comment.</p>
+      <div class="note">
+        <b>Good to know:</b> each use sends your sentence and the names of your open tasks to Google. The free tier is usually enough, but Google may use free-tier data to improve its products. If you're at a company, ask whoever manages this whether that's okay.
+      </div>
+      <label class="field"><span>Gemini API key</span><input id="geminiKey" type="password" placeholder="AIza…" spellcheck="false" autocomplete="off" /></label>
+      <details class="fix">
+        <summary>How do I get a key?</summary>
+        <ol>
+          <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with a Google account.</li>
+          <li>Click <b>Create API key</b> and copy it. It starts with <code>AIza</code>.</li>
+          <li>Paste it in the box above. Keep it private.</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">5</span>You're set. Here's the daily routine</h2>
+      <ol class="plain" style="margin: 0 0 12px">
+        <li><b>Pin the extension.</b> Click the puzzle-piece icon at the top right of Chrome, then the pin next to <b>KW Time Logger</b>. The ⚡ icon now stays in your toolbar.</li>
+        <li><b>Open it</b> with the ⚡ icon, or press <code>⌘ Shift L</code> on a Mac (<code>Ctrl Shift L</code> on Windows).</li>
+        <li><b>Log time</b> in either of two ways:
+          <ul class="plain" style="margin-top: 4px">
+            <li><b>Type it:</b> write what you did and press <code>⌘ Enter</code>. It fills the form for you. Check it, then click <b>Add to queue</b>.</li>
+            <li><b>Use the form:</b> pick a task, enter the hours (like <code>1:30</code> or <code>1.5</code>) and a comment.</li>
+          </ul>
+        </li>
+        <li><b>Done.</b> The queue goes to Zoho at your end-of-day time. In a hurry? Click <b>Log now</b> instead.</li>
+      </ol>
+      <p class="muted small" style="margin: 0">There's also a <b>Todo</b> tab for your own to-do list. A <b>⏱ Log</b> button on any todo turns it into a time entry.</p>
+    </section>
+
+    <section class="card">
+      <h2><span aria-hidden="true">🛟</span>Something went wrong?</h2>
+      <p class="muted">Find your problem below. Most are fixed in a minute.</p>
+
+      <details class="fix">
+        <summary>Zoho says “Invalid redirect URI” or “redirect_uri mismatch”</summary>
+        <p>The redirect address in your Zoho client doesn't match the one in step D.</p>
+        <ol>
+          <li>Go back to the <a href="https://api-console.zoho.in" target="_blank" rel="noopener" id="consoleLink2">Zoho API Console</a>, open your <b>KW Time Logger</b> client and edit it.</li>
+          <li>Replace the Authorized Redirect URI with a fresh copy from step D. No spaces at the start or end.</li>
+          <li>Save, then click <b>Connect Zoho</b> again.</li>
+        </ol>
+        <p>This address changes if the extension is removed and loaded again from a different folder. If that happened, update it in Zoho the same way.</p>
+      </details>
+
+      <details class="fix">
+        <summary>“invalid_client” or “Zoho sign-in failed”</summary>
+        <p>Usually the Client ID or Secret was pasted with a missing character or an extra space, or the wrong region is picked in step A. Re-copy both from Zoho's <b>Client Secret</b> tab, check the region, and try again.</p>
+      </details>
+
+      <details class="fix">
+        <summary>I can’t find “Add Client” in the API Console</summary>
+        <ul>
+          <li>Check you opened the console for your region (step A). The button on step B uses the region you picked.</li>
+          <li>Make sure you're signed in with your work Zoho account.</li>
+          <li>At some companies only admins can create API clients. If you see an error or no button, ask your Zoho admin to do step 1 for you, or to give you access.</li>
+        </ul>
+      </details>
+
+      <details class="fix">
+        <summary>It connected, but I see no tasks</summary>
+        <ul>
+          <li>Only tasks that are <b>open</b> and <b>assigned to you</b> show up. Ask someone to assign you one, or check it in Zoho.</li>
+          <li>Click <b>Refresh tasks</b> in the popup. Tasks are remembered for 30 minutes.</li>
+          <li>If you have several portals, choose the right one in step 2.</li>
+          <li>Still empty? Open <b>Advanced</b> at the bottom of this page and see the note there.</li>
+        </ul>
+      </details>
+
+      <details class="fix">
+        <summary>My hours didn't show up in Zoho</summary>
+        <ul>
+          <li>Open the popup's <b>Queue</b> tab. If the entry is still there, it hasn't been sent yet. Click <b>Send now</b>.</li>
+          <li>A red message under an entry says why Zoho refused it. Common reasons: the task was closed, the date is locked, or you don't have permission to log time on that project.</li>
+          <li>Check the <b>Sent</b> tab. If it's listed there, Zoho accepted it. In Zoho, open the task's <b>Time</b> or <b>Timesheet</b> area to find it.</li>
+        </ul>
+      </details>
+
+      <details class="fix">
+        <summary>The popup asks me to connect again</summary>
+        <p>Your connection was cancelled or expired (for example, if the key was removed in Zoho). Click <b>Connect Zoho</b> in step 2 again. Your queue and todos are kept.</p>
+      </details>
+
+      <details class="fix">
+        <summary>I want to start over or disconnect</summary>
+        <p>Click <b>Disconnect</b> in step 2. This signs you out and cancels the extension's access on Zoho's side. Your queued entries and todos stay where they are.</p>
+      </details>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary>Advanced</summary>
+        <div class="stack" style="margin-top: 12px">
+          <label class="field">
+            <span>Zoho Projects user ID (ZPUID)</span>
+            <input id="zpuid" type="text" placeholder="Found automatically" spellcheck="false" />
+          </label>
+          <p class="small muted" style="margin: 0">Only needed if your tasks don't show up even though they're assigned to you. The extension normally finds this by itself the first time it sees one of your tasks. Leave it empty unless someone from your team asks you to fill it in.</p>
+        </div>
+      </details>
+    </section>
+
+    <p id="saved" class="saved" style="opacity: 0">✓ Saved</p>
+  </div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KW Time Logger ⚡</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <span class="bolt" aria-hidden="true">⚡</span>
+      <div class="brand grow"><b>KW Time Logger</b><small>→ Zoho Projects</small></div>
+      <span id="todayTotal" class="pill accent" title=""></span>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <section id="connect" class="connect hidden">
+      <span class="bolt" aria-hidden="true">⚡</span>
+      <h2>Connect Zoho Projects</h2>
+      <p class="muted">One-time setup, about two minutes. After that you can log hours from here without opening Zoho.</p>
+      <button id="setupBtn" class="btn primary">Open setup</button>
+    </section>
+
+    <main id="main" class="hidden">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="log" aria-selected="true">Log</button>
+        <button role="tab" data-tab="todo">Todo <span id="todoCount" class="count hidden"></span></button>
+        <button role="tab" data-tab="queue">Queue <span id="queueCount" class="count hidden"></span></button>
+        <button role="tab" data-tab="sent">Sent</button>
+      </nav>
+
+      <section data-view="log" class="view">
+        <div class="say">
+          <span class="say-label">⚡ Type it</span>
+          <textarea id="say" rows="2" placeholder="2h on the checkout bug, fixed payment retry"></textarea>
+          <div class="row">
+            <span id="matchMode" class="small muted grow"></span>
+            <button id="fillBtn" class="btn sm" type="button">Fill form <kbd>⌘↵</kbd></button>
+          </div>
+        </div>
+
+        <div id="draftNav" class="banner warn row hidden">
+          <span id="draftLabel" class="grow"></span>
+          <button id="skipDraftBtn" class="btn sm ghost" type="button">Skip</button>
+        </div>
+
+        <form id="form" class="stack" autocomplete="off" novalidate>
+          <label class="field">
+            <span class="row">Project <button id="refreshBtn" class="link" type="button" title="Reload tasks from Zoho">Refresh tasks</button></span>
+            <select id="project"></select>
+          </label>
+
+          <div class="field">
+            <span>Task</span>
+            <div class="combo" id="taskCombo">
+              <input id="taskSearch" type="search" placeholder="Search your tasks" role="combobox" aria-expanded="false" aria-controls="taskMenu" />
+              <ul id="taskMenu" class="menu hidden" role="listbox"></ul>
+            </div>
+            <div id="taskMeta" class="small muted"></div>
+            <div id="suggestions" class="suggestions hidden"></div>
+          </div>
+
+          <div class="row two">
+            <label class="field grow"><span>Hours</span><input id="hours" type="text" inputmode="decimal" placeholder="1:30 or 1.5" /></label>
+            <label class="field grow"><span>Date</span><input id="date" type="date" /></label>
+          </div>
+          <div class="row chips" id="quickHours">
+            <button class="chip" type="button" data-min="30">30m</button>
+            <button class="chip" type="button" data-min="60">1h</button>
+            <button class="chip" type="button" data-min="120">2h</button>
+            <button class="chip" type="button" data-min="240">4h</button>
+            <button class="chip" type="button" data-min="480">8h</button>
+          </div>
+
+          <div class="row">
+            <span class="field-label grow">Billing</span>
+            <div class="segmented" id="billing">
+              <button type="button" data-v="1" aria-pressed="false">Billable</button>
+              <button type="button" data-v="0" aria-pressed="true">Non-billable</button>
+            </div>
+          </div>
+
+          <label class="field"><span>Comment</span><textarea id="notes" rows="2" placeholder="What did you work on?"></textarea></label>
+
+          <div id="formMsg" class="banner hidden"></div>
+
+          <div class="row actions">
+            <button id="logNowBtn" class="btn" type="button">Log now</button>
+            <button id="queueBtn" class="btn primary grow" type="submit">Add to queue</button>
+          </div>
+          <p id="queueHint" class="small muted hint"></p>
+        </form>
+      </section>
+
+      <section data-view="todo" class="view hidden">
+        <form id="todoForm" class="todo-add" autocomplete="off">
+          <div class="row">
+            <input id="todoText" type="text" class="grow" placeholder="What needs doing?" maxlength="300" />
+            <button class="btn primary" type="submit" aria-label="Add todo">Add</button>
+          </div>
+          <select id="todoTask" aria-label="Link to a Zoho task"></select>
+        </form>
+        <div id="todoList" class="todo-list"></div>
+        <div id="doneBlock" class="done-block hidden">
+          <div class="day-head">
+            <span id="doneLabel"></span>
+            <button id="clearDoneBtn" class="link" type="button">Clear</button>
+          </div>
+          <div id="doneList" class="todo-list"></div>
+        </div>
+      </section>
+
+      <section data-view="queue" class="view hidden">
+        <div id="queueList" class="list"></div>
+        <footer id="queueFooter" class="list-footer hidden">
+          <span id="queueTotal" class="grow small muted"></span>
+          <button id="sendAllBtn" class="btn primary">Send all now</button>
+        </footer>
+      </section>
+
+      <section data-view="sent" class="view hidden">
+        <div id="sentList" class="list"></div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

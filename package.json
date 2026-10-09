@@ -1,0 +1,20 @@
+{
+  "name": "zoho-time-logger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome extension that logs hours to Zoho Projects without opening Zoho.",
+  "scripts": {
+    "build": "esbuild scripts/vendor-entry.js --bundle --format=esm --platform=browser --minify --outfile=vendor/anthropic.js",
+    "icons": "python3 scripts/make-icons.py",
+    "zip": "zip -r zoho-time-logger.zip manifest.json background.js styles.css popup.html popup.css popup.js options.html options.js src vendor icons fonts -x '*.DS_Store'",
+    "test": "node scripts/test.mjs",
+    "preview": "node dev/serve.mjs"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
+    "esbuild": "^0.28.2"
+  }
+}
