@@ -164,6 +164,7 @@ function wireForm() {
   attachDatePicker($("date"));
   $("date").onchange = saveDraft;
   $("notes").oninput = saveDraft;
+  $("expandBtn").onclick = expandNotes;
   $("say").oninput = saveDraft;
   for (const b of $("billing").children) b.onclick = () => setBilling(b.dataset.v === "1", true);
 
@@ -178,6 +179,25 @@ function wireForm() {
     }
   });
   $("logNowBtn").onclick = logNow;
+}
+
+async function expandNotes() {
+  const note = $("notes").value.trim();
+  if (!state.settings.geminiKey) return showMsg("warn", "Add a Gemini key in Settings to use AI comments.");
+  if (!note) return showMsg("warn", "Type a short note first, then expand it.");
+  const btn = $("expandBtn");
+  btn.disabled = true;
+  btn.textContent = "Writing…";
+  try {
+    const { aiExpand } = await import("./src/ai.js");
+    $("notes").value = await aiExpand(note, state.byId.get(state.taskId), state.settings.geminiKey);
+    saveDraft();
+  } catch (err) {
+    showMsg("warn", `Couldn't expand that: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✨ Expand with AI";
+  }
 }
 
 function setDate(iso) {

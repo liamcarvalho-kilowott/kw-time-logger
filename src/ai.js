@@ -32,24 +32,47 @@ const INSTRUCTIONS = `You turn what someone says about their work into Zoho Proj
 - notes: a brief, professional timesheet comment based on what they said they did. Don't repeat the task name. Empty if they gave no detail.
 - billable: only say billable / non_billable if they said so; otherwise task_default.`;
 
-export async function aiParse(text, tasks, today, apiKey) {
-  const taskList = tasks.map((t) => `${t.id} | ${t.key} | ${t.projectName} | ${t.tasklist} | ${t.name}`).join("\n");
-  const weekday = new Date(`${today}T12:00:00`).toLocaleDateString("en-US", { weekday: "long" });
-
+async function callGemini(apiKey, body) {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: `${INSTRUCTIONS}\n\nOpen tasks (id | key | project | task list | task):\n${taskList}` }] },
-      contents: [{ role: "user", parts: [{ text: `Today is ${weekday}, ${today}.\n\n${text}` }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, maxOutputTokens: 8000 },
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = await res.json();
   const cand = data.candidates?.[0];
   if (data.promptFeedback?.blockReason || cand?.finishReason === "SAFETY") throw new Error("Gemini couldn't process that. Fill in the form instead.");
   if (cand?.finishReason === "MAX_TOKENS") throw new Error("That was too long to read in one go. Try fewer entries.");
+  return cand;
+}
+
+/** Turns a short note into a fuller timesheet comment, using the task for context. */
+export async function aiExpand(note, task, apiKey) {
+  const cand = await callGemini(apiKey, {
+    systemInstruction: { parts: [{ text: "You write timesheet comments for Zoho Projects. Expand the person's short note into a clear, professional comment of 2-4 sentences (under 400 characters) in the first person, past tense. Only elaborate on what the note plausibly implies for this task; never invent specific numbers, names, tools or outcomes. Reply with the comment text only." }] },
+    contents: [{ role: "user", parts: [{ text: `Task: ${task ? `${task.projectName} / ${task.name}` : "(not chosen)"}
+Note: ${note}` }] }],
+    generationConfig: { maxOutputTokens: 1000 },
+  });
+  const out = cand?.content?.parts?.map((p) => p.text).join("").trim();
+  if (!out) throw new Error("Gemini returned nothing.");
+  return out;
+}
+
+export async function aiParse(text, tasks, today, apiKey) {
+  const taskList = tasks.map((t) => `${t.id} | ${t.key} | ${t.projectName} | ${t.tasklist} | ${t.name}`).join("\n");
+  const weekday = new Date(`${today}T12:00:00`).toLocaleDateString("en-US", { weekday: "long" });
+
+  const cand = await callGemini(apiKey, {
+    systemInstruction: { parts: [{ text: `${INSTRUCTIONS}
+
+Open tasks (id | key | project | task list | task):
+${taskList}` }] },
+    contents: [{ role: "user", parts: [{ text: `Today is ${weekday}, ${today}.
+
+${text}` }] }],
+    generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, maxOutputTokens: 8000 },
+  });
   const { entries } = JSON.parse(cand?.content?.parts?.[0]?.text ?? '{"entries":[]}');
 
   const known = new Set(tasks.map((t) => t.id));
