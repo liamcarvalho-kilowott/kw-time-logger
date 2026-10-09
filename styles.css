@@ -20,9 +20,9 @@
 }
 
 :root {
-  --bg: #fff8e7;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #fff1c7;
+  --surface-2: #f3f3f3;
   --ink: #111111;
   --text: #111111;
   --muted: #5b5648;
@@ -41,23 +41,6 @@
   --font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17161c;
-    --surface: #222129;
-    --surface-2: #2c2a35;
-    --ink: #f4efe1;
-    --text: #f4efe1;
-    --muted: #b3ad9c;
-    --sky: #5aa9e6;
-    --mint: #5fd38a;
-    --pink: #ff7a9c;
-    --orange: #ff9f2e;
-    --danger: #ff6b6b;
-    color-scheme: dark;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -103,10 +86,6 @@ textarea { resize: vertical; min-height: 56px; }
 input.invalid, .combo.invalid input { border-color: var(--danger); box-shadow: 2px 2px 0 var(--danger); }
 select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
 input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { cursor: pointer; }
-@media (prefers-color-scheme: dark) {
-  input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-}
-
 /* Buttons sit on a hard shadow and press flat when clicked. */
 .btn {
   display: inline-flex;
