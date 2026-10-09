@@ -31,6 +31,7 @@
         <button role="tab" data-tab="todo">Todo <span id="todoCount" class="count hidden"></span></button>
         <button role="tab" data-tab="queue">Queue <span id="queueCount" class="count hidden"></span></button>
         <button role="tab" data-tab="sent">Sent</button>
+        <button role="tab" data-tab="assign">Assign</button>
       </nav>
 
       <section data-view="log" class="view">
@@ -124,6 +125,26 @@
 
       <section data-view="sent" class="view hidden">
         <div id="sentList" class="list"></div>
+      </section>
+
+      <section data-view="assign" class="view hidden">
+        <p class="small muted" style="margin: 0 0 10px">For managers: create a task and assign it to someone. Zoho decides who is allowed to.</p>
+        <form id="assignForm" class="stack" autocomplete="off" novalidate>
+          <label class="field"><span>Project</span><select id="aProject"></select></label>
+          <div class="row two">
+            <label class="field grow"><span>Assign to</span><select id="aUser" disabled></select></label>
+            <label class="field grow"><span>Task list</span><select id="aList" disabled></select></label>
+          </div>
+          <label class="field"><span>Task name</span><input id="aName" type="text" placeholder="What needs doing?" /></label>
+          <label class="field"><span>Description</span><textarea id="aDesc" rows="3" placeholder="Details, links, what done looks like"></textarea></label>
+          <div class="row two">
+            <label class="field grow"><span>Due date</span><input id="aDue" type="text" readonly placeholder="None" /></label>
+            <label class="field grow"><span>Priority</span><select id="aPriority"><option value="">None</option><option>Low</option><option>Medium</option><option>High</option></select></label>
+          </div>
+          <label class="field"><span>Estimated hours</span><input id="aHours" type="text" inputmode="decimal" placeholder="Optional: 4 or 1:30" /></label>
+          <div id="aMsg" class="banner hidden"></div>
+          <button id="aSubmit" class="btn primary" type="submit">Create and assign</button>
+        </form>
       </section>
     </main>
   </div>

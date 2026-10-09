@@ -10,6 +10,9 @@ const SCOPES = [
   "ZohoProjects.tasks.READ",
   "ZohoProjects.timesheets.CREATE",
   "ZohoProjects.timesheets.READ",
+  "ZohoProjects.tasks.CREATE", // Assign tab (managers)
+  "ZohoProjects.users.READ",
+  "ZohoProjects.tasklists.READ",
   "AaaServer.profile.Read",
 ].join(",");
 
@@ -292,4 +295,54 @@ export async function logTime({ projectId, taskId, date, minutes, billable, note
   });
   const log = json.timelogs?.tasklogs?.[0];
   return log ? String(log.id_string ?? log.id) : "";
+}
+
+// ---------- creating tasks (managers) ----------
+// ponytail: v1 REST shapes written from Zoho's docs, never run against a real portal. Zoho's error text is shown as is.
+
+async function restApi(path, { method = "GET", form, query } = {}) {
+  const portal = await getPortal();
+  const auth = await freshAuth();
+  const url = new URL(`${projectsHost(auth.accountsServer)}/restapi/portal/${portal.id}${path}`);
+  for (const [k, v] of Object.entries(query ?? {})) url.searchParams.set(k, v);
+  return request(url, { method, form });
+}
+
+const byName = (a, b) => a.name.localeCompare(b.name);
+
+export async function listProjects() {
+  const json = await restApi("/projects/", { query: { status: "active", range: 200 } });
+  return (json.projects ?? []).map((p) => ({ id: String(p.id_string ?? p.id), name: p.name })).sort(byName);
+}
+
+export async function listProjectUsers(projectId) {
+  const json = await restApi(`/projects/${projectId}/users/`);
+  return (json.users ?? [])
+    .filter((u) => u.active !== false)
+    .map((u) => ({ id: String(u.id), name: u.name || u.email || String(u.id), email: u.email || "" }))
+    .sort(byName);
+}
+
+export async function listTasklists(projectId) {
+  const json = await restApi(`/projects/${projectId}/tasklists/`, { query: { flag: "internal", range: 100 } });
+  return (json.tasklists ?? []).map((t) => ({ id: String(t.id_string ?? t.id), name: t.name })).sort(byName);
+}
+
+/** Creates a task assigned to one project member. Returns { id, key, url }. */
+export async function createTask({ projectId, name, description, assigneeId, tasklistId, dueDate, priority, minutes, today }) {
+  const form = { name, person_responsible: assigneeId };
+  if (description) form.description = description;
+  if (tasklistId) form.tasklist_id = tasklistId;
+  if (priority) form.priority = priority;
+  if (dueDate) {
+    form.end_date = toZohoDate(dueDate);
+    form.start_date = toZohoDate(dueDate < today ? dueDate : today);
+  }
+  if (minutes) {
+    form.duration = String(+(minutes / 60).toFixed(2));
+    form.duration_type = "hours";
+  }
+  const json = await restApi(`/projects/${projectId}/tasks/`, { method: "POST", form });
+  const t = json.tasks?.[0];
+  return { id: String(t?.id_string ?? t?.id ?? ""), key: t?.key ?? "", url: t?.link?.web?.url ?? "" };
 }

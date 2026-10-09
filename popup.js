@@ -3,6 +3,7 @@ import { getMyTasks, isSignedIn, NotSignedIn } from "./src/zoho.js";
 import { enqueue, updateQueued, removeQueued, summarize } from "./src/logbook.js";
 import { localParse } from "./src/match.js";
 import { addTodo, updateTodo, toggleTodo, removeTodo, clearDone } from "./src/todos.js";
+import { initAssign } from "./src/assign.js";
 import { attachDatePicker } from "./src/datepicker.js";
 import { isoDate, parseDuration, humanDuration, humanDate, toHHMM } from "./src/time.js";
 
@@ -53,6 +54,7 @@ async function init() {
   renderSent(await get("history"));
   renderTodos(await get("todos"));
   renderToday();
+  initAssign();
   onChange(["todos"], async () => renderTodos(await get("todos")));
   onChange(["queue", "history"], async () => {
     renderQueue(await get("queue"));

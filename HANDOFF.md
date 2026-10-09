@@ -86,6 +86,14 @@ First real test: connect, then log **one** small entry with **Log now** and chec
 - **Light mode only:** all dark-mode CSS was removed and `--bg` is white.
 - **Distribution:** private repo `liamcarvalho-kilowott/kw-time-logger`; teammates download `kw-time-logger.zip` from the latest GitHub release and use Load unpacked. Releases so far: v0.1.0 to v0.1.2. To release: bump `version` in `manifest.json` and `package.json`, rebuild the ZIP (manifest at the ZIP root; only manifest, JS/HTML/CSS, `src/`, `icons/`, `fonts/`), commit with `git add -f kw-time-logger.zip`, push, then `gh release create`.
 
+## Assign tab (managers)
+
+`src/assign.js` (UI) + `listProjects/listProjectUsers/listTasklists/createTask` at the end of `src/zoho.js`. Uses the v1 REST API: `POST /restapi/portal/{p}/projects/{id}/tasks/` with `name`, `person_responsible` (ZPUID), `description`, `tasklist_id`, `priority`, `start_date`/`end_date` (MM-DD-YYYY), `duration` + `duration_type=hours`. New scopes: `ZohoProjects.tasks.CREATE`, `users.READ`, `tasklists.READ`, so everyone must Disconnect/Connect once. **Never run against real Zoho**: the response shapes and the `duration_type` value are from memory of the docs; tested only with mocked responses. The tab shows for everyone; Zoho's permissions decide who can create.
+
+## Usage analytics (parked)
+
+Not shipped. A working version (daily anonymous ping to a Supabase edge function, with an opt-out) was built and tested but removed from the release. The Supabase project `kw-time-logger-analytics` (ref `tjzmkzwkhclnttmziohv`) with table `kw_daily` and function `kw-ping` still exists. Re-adding the client side means a small `src/ping.js`, a host permission, a settings checkbox and a README privacy line.
+
 ## Firefox, Edge, Brave
 
 Edge and Brave (Chromium) run the normal build. Firefox uses `manifest.firefox.json` (background.scripts instead of a service worker, fixed gecko id `kw-time-logger@kilowott.com`, min Firefox 121). Everything else is shared. `python scripts/build-zips.py` makes `kw-time-logger.zip` and `kw-time-logger-firefox.zip`; keep the version in both manifests in sync. Firefox does not grant host permissions at install, so `connect()` in `options.js` requests them; `notify()` in `background.js` falls back to a plain notification because Firefox rejects buttons. **Firefox is untested in a real browser.** Internet Explorer is not supported (it is retired).
