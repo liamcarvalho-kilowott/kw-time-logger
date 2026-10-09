@@ -3,24 +3,48 @@
 A Chrome extension for logging hours to your Zoho Projects tasks without opening Zoho.
 
 - **Form:** pick a project, then one of *your* open tasks. Enter hours, date, billable or not, and a comment.
-- **Type it:** for example `2h on the checkout bug - fixed payment retry and 30m team 1 on 1 yesterday`. This becomes two entries matched to your tasks. Matching happens on your device by default. Add an Anthropic API key to have Claude do the matching instead.
+- **Type it:** for example `2h on the checkout bug - fixed payment retry and 30m team 1 on 1 yesterday`. This becomes two entries matched to your tasks. Matching happens on your device by default. Add a free Gemini API key to have Gemini do the matching instead.
 - **Queue:** entries wait until your end-of-day time (default 6:30 PM). Then they're either sent to Zoho automatically or you get a reminder to send them. **Log now** skips the queue.
 - **Todo:** a personal checklist. Optionally link a todo to one of your Zoho tasks. **⏱ Log** on a todo opens the Log tab with that task selected and the todo text as the comment, so you only add the hours. Double-click a todo to edit it. Todos stay in this browser and are never sent to Zoho.
 - **Sent:** shows what went to Zoho, grouped by day. The toolbar badge shows how many entries are queued, and turns red if one failed.
 
 Open it with the toolbar icon or **⌘⇧L** (Ctrl+Shift+L on Windows).
 
-## Install (about 2 minutes)
+## Install (the dumbest way possible)
 
-1. Go to `chrome://extensions` and turn on **Developer mode** (top right).
-2. Click **Load unpacked** and choose this `zoho-time-logger` folder. The settings page opens.
-3. The settings page is a plain-language, step-by-step guide with copy buttons and a troubleshooting section, so you can send it to teammates as is. In short:
-   1. Pick your Zoho region (India = `zoho.in`).
-   2. In the Zoho API Console, create a **Server-based Application**. Paste in the redirect URI shown on the settings page. Then copy the Client ID and Secret back into the settings page.
-   3. Click **Connect Zoho** and approve the access request.
-4. Pin the extension (puzzle icon, then the pin) so it's one click away.
+### Part 1: Get the files
 
-> Keep the folder where it is. Chrome builds the extension's ID, and therefore the redirect URI, from the folder path. If you move the folder, update the redirect URI in Zoho.
+1. Open the repo link your teammate sent you. Sign in to GitHub if it asks. If you see "404", ask to be added to the repo.
+2. Click the big green **Code** button.
+3. Click **Download ZIP**. A file called `kw-time-logger-main.zip` lands in your **Downloads** folder.
+4. Open your **Downloads** folder. Right-click the ZIP and choose **Extract All...**, then click **Extract**.
+5. A normal folder opens. Inside it, look for the folder that has a file called `manifest.json` in it. **That** is your extension folder.
+6. Move that folder somewhere permanent, like `Documents`. Do not rename it and **never move or delete it again**. Chrome needs it to stay there.
+
+> There is also a ready-made `kw-time-logger.zip` in the repo. Click it, then click the download icon, if you prefer a smaller file. Extract it the same way.
+
+### Part 2: Plug the folder into Chrome
+
+1. Open Chrome. Type `chrome://extensions` in the address bar and press Enter.
+2. Turn on **Developer mode**. It is the switch at the top right.
+3. Click **Load unpacked** (top left).
+4. Pick the extension folder from Part 1, the one with `manifest.json` in it. Click **Select Folder**.
+5. **KW Time Logger** now shows up in your list, and the settings page opens by itself.
+6. Click the puzzle-piece icon at the top right of Chrome, then click the **pin** next to KW Time Logger so it is always one click away.
+
+### Part 3: Connect Zoho
+
+The settings page walks you through it with copy buttons. In short:
+
+1. Pick your Zoho region (India = `zoho.in`).
+2. In the Zoho API Console, create a **Server-based Application**. Paste in the redirect URI shown on the settings page. Then copy the Client ID and Secret back into the settings page.
+3. Click **Connect Zoho** and approve the access request.
+
+### Updating later
+
+Download the new ZIP, extract it, and copy the files **over the old folder** (same folder, same place). Then go to `chrome://extensions` and click the round **reload** arrow on KW Time Logger.
+
+> Chrome builds the extension's ID, and therefore the Zoho redirect URI, from the folder path. If you move the folder, update the redirect URI in Zoho.
 
 ## How it talks to Zoho
 
@@ -40,7 +64,7 @@ Your tasks are cached for 30 minutes. Use **Refresh tasks** in the popup to relo
 
 - Everything is stored only in this browser's extension storage: settings, tokens, queue and history. There is no server.
 - Your Zoho client secret is stored there too. That's fine for a personal extension, but don't publish this build to the Chrome Web Store as it is.
-- With an Anthropic key set, each **Fill form** sends Anthropic your sentence plus the names of your open tasks. Without a key, nothing leaves your machine except your calls to Zoho.
+- With a Gemini key set, each **Fill form** sends Google your sentence plus the names of your open tasks. Without a key, nothing leaves your machine except your calls to Zoho.
 
 ## Files
 
@@ -55,9 +79,8 @@ src/zoho.js        OAuth plus Zoho Projects calls
 src/logbook.js     queue and history
 src/todos.js       todo list
 src/match.js       on-device sentence → entries matcher
-src/ai.js          Claude matcher (claude-opus-5-5, structured output, server-side refusal fallback)
+src/ai.js          Gemini matcher (gemini-2.5-flash, structured JSON output)
 src/time.js        duration and date helpers
-vendor/            bundled @anthropic-ai/sdk (rebuild: npm install && npm run build)
 dev/               mock chrome API and preview server (not part of the extension)
 ```
 
