@@ -30,7 +30,7 @@ export async function initSlackPing() {
     const ask = document.getElementById("notesAsk").value.trim();
     if (!slackTeamId || !id) return say("Add your workspace ID and people in Settings first.");
     if (!ask) return say("Write what to ask for first.");
-    const isChannel = /^[CG]/i.test(id);
+    const isChannel = /^[CGD]/i.test(id);
     const hello = isChannel ? "Hi!" : `Hi ${to.selectedOptions[0].textContent}!`;
     try {
       await navigator.clipboard.writeText(`${hello} Could you please assign me hours or tasks for the following?

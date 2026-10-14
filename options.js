@@ -197,7 +197,7 @@ function renderContacts(contacts) {
       row.remove();
       saveAll();
     };
-    row.append(field(name, "Name, e.g. Mr. Ehours", "grow"), field(id, "U0123ABCD or C0123ABCD", "grow"), remove);
+    row.append(field(name, "Name, e.g. Mr. Ehours", "grow"), field(id, "U..., C... or D...", "grow"), remove);
     box.append(row);
   };
   contacts.forEach(addRow);
