@@ -86,7 +86,13 @@ First real test: connect, then log **one** small entry with **Log now** and chec
 - **Light mode only:** all dark-mode CSS was removed and `--bg` is white.
 - **Distribution:** private repo `liamcarvalho-kilowott/kw-time-logger`; teammates download `kw-time-logger.zip` from the latest GitHub release and use Load unpacked. Releases so far: v0.1.0 to v0.1.2. To release: bump `version` in `manifest.json` and `package.json`, rebuild the ZIP (manifest at the ZIP root; only manifest, JS/HTML/CSS, `src/`, `icons/`, `fonts/`), commit with `git add -f kw-time-logger.zip`, push, then `gh release create`.
 
+## Searchable pickers
+
+`src/searchselect.js` turns a `<select>` into a type-to-search box while keeping the select as the source of truth (it overrides the instance `value` setter and watches option changes, so `$("project").value = ...` and `replaceChildren` elsewhere still work). Applied to `#project`, `#todoTask` (popup.js) and `#aProject`, `#aUser` (assign.js). The Log task box already had its own search (`matchingTasks`), which also matches project names.
+
 ## Notes tab
+
+`initSlackPing()` in `src/notes.js`: builds a message from the "Ask" box, copies it, and opens `slack://user?team=<T id>&id=<U id>` (or `slack://channel?...` when the ID starts with C/G) for the contact picked in `#slackTo` via `chrome.tabs.create`. Settings `slackTeamId` and `slackContacts` = `[{name, id}]` (card in options.html, rows built by `renderContacts` in options.js). No Slack app, token or webhook; the user pastes and sends. Real Slack deep link untested in a browser (only checked the URL and clipboard text with stubs). A real send needs a Slack app (webhook or user token) if wanted later.
 
 `src/notes.js`: two textareas (`notesAdd`, `notesAsk`) autosaved to the `notes` storage key as `{add, ask}`. The "Mr. Ehours" label is hardcoded in `popup.html`. The tab bar was tightened in `popup.css` to fit six tabs in 390px.
 

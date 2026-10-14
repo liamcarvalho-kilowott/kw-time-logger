@@ -1,6 +1,6 @@
 // The Notes tab: two free-text boxes, saved as you type.
 
-import { get, set } from "./storage.js";
+import { get, set, getSettings } from "./storage.js";
 
 export async function initNotes() {
   const boxes = { add: document.getElementById("notesAdd"), ask: document.getElementById("notesAsk") };
@@ -14,4 +14,35 @@ export async function initNotes() {
       timer = setTimeout(async () => set("notes", { ...(await get("notes")), [key]: box.value }), 300);
     });
   }
+}
+
+/** Copies a message built from the "Ask for" box and opens Slack on the chosen person or channel. */
+export async function initSlackPing() {
+  const to = document.getElementById("slackTo");
+  const say = (text) => (document.getElementById("slackMsg").textContent = text);
+  const { slackContacts } = await getSettings();
+  const contacts = slackContacts.filter((c) => c.id);
+  to.replaceChildren(...(contacts.length ? contacts : [{ name: "Add people in Settings", id: "" }]).map((c) => new Option(c.name || c.id, c.id)));
+
+  document.getElementById("slackBtn").onclick = async () => {
+    const { slackTeamId } = await getSettings();
+    const id = to.value;
+    const ask = document.getElementById("notesAsk").value.trim();
+    if (!slackTeamId || !id) return say("Add your workspace ID and people in Settings first.");
+    if (!ask) return say("Write what to ask for first.");
+    const isChannel = /^[CG]/i.test(id);
+    const hello = isChannel ? "Hi!" : `Hi ${to.selectedOptions[0].textContent}!`;
+    try {
+      await navigator.clipboard.writeText(`${hello} Could you please assign me hours or tasks for the following?
+
+${ask}
+
+Thanks!`);
+    } catch {
+      return say("Couldn't copy the message.");
+    }
+    const kind = isChannel ? "channel" : "user";
+    chrome.tabs.create({ url: `slack://${kind}?team=${encodeURIComponent(slackTeamId)}&id=${encodeURIComponent(id)}` });
+    say("Copied. Paste it in Slack.");
+  };
 }

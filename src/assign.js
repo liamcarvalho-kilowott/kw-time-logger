@@ -2,6 +2,7 @@
 
 import { listProjects, listProjectUsers, listTasklists, createTask } from "./zoho.js";
 import { attachDatePicker } from "./datepicker.js";
+import { searchableSelect } from "./searchselect.js";
 import { isoDate, parseDuration } from "./time.js";
 
 const $ = (id) => document.getElementById(id);
@@ -20,6 +21,8 @@ function msg(kind, text) {
 export function initAssign() {
   let loaded = false;
   attachDatePicker($("aDue"));
+  searchableSelect($("aProject"));
+  searchableSelect($("aUser"));
 
   // Load projects the first time the tab is opened, not on every popup open.
   document.querySelector('[data-tab="assign"]').addEventListener("click", async () => {

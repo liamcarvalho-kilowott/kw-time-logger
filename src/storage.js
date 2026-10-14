@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
   zpuid: "", // Zoho Projects user id; found automatically, can be overridden
   endOfDay: "18:30",
   autoSubmit: true, // false = remind me and wait for approval
+  slackTeamId: "", // for the Notes tab "Ping on Slack" button
+  slackContacts: [], // [{ name, id }] people (U...) or channels (C...) to ping
   geminiKey: "", // optional; without it, "type it" uses the on-device matcher
 };
 

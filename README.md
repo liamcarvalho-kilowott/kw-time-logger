@@ -2,12 +2,13 @@
 
 A Chrome extension for logging hours to your Zoho Projects tasks without opening Zoho.
 
-- **Form:** pick a project, then one of *your* open tasks. Enter hours, date, billable or not, and a comment.
+- **Form:** pick a project (type to search it) and then one of *your* open tasks (type to search those too). The Assign tab's project and person pickers and the Todo task link are searchable as well.
+- **Form (details):** pick a project, then one of *your* open tasks. Enter hours, date, billable or not, and a comment.
 - **Type it:** for example `2h on the checkout bug - fixed payment retry and 30m team 1 on 1 yesterday`. This becomes two entries matched to your tasks. Matching happens on your device by default. Add a free Gemini API key to have Gemini do the matching instead.
 - **Queue:** entries wait until your end-of-day time (default 6:30 PM). Then they're either sent to Zoho automatically or you get a reminder to send them. **Log now** skips the queue.
 - **Todo:** a personal checklist. Optionally link a todo to one of your Zoho tasks. **⏱ Log** on a todo opens the Log tab with that task selected and the todo text as the comment, so you only add the hours. Double-click a todo to edit it. Todos stay in this browser and are never sent to Zoho.
 - **Assign (managers):** create a task in any project and assign it to a project member, with task list, description, due date, priority and estimated hours. Zoho decides who is allowed, so non-managers just see Zoho's error. After updating from an older version, click **Disconnect** then **Connect Zoho** once so Zoho can grant the new permissions.
-- **Notes:** two free-text boxes, "Tasks to add" and "Ask Mr. Ehours for", saved as you type. They stay in this browser and are never sent anywhere.
+- **Notes:** two free-text boxes, "Tasks to add" and "Ask Mr. Ehours for", saved as you type. They stay in this browser. **Ping on Slack** copies a ready-made message built from the second box and opens Slack on the person or channel you pick, so you only paste and send. Set your workspace ID and add people or channels once in Settings, and they are saved. Nothing is sent automatically.
 - **Sent:** shows what went to Zoho, grouped by day. The toolbar badge shows how many entries are queued, and turns red if one failed.
 
 Open it with the toolbar icon or **⌘⇧L** (Ctrl+Shift+L on Windows).

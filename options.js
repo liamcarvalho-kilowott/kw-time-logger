@@ -34,13 +34,15 @@ async function init() {
   $("endOfDay").value = s.endOfDay;
   document.querySelector(`input[name="mode"][value="${s.autoSubmit ? "auto" : "ask"}"]`).checked = true;
   $("geminiKey").value = s.geminiKey;
+  $("slackTeamId").value = s.slackTeamId;
+  renderContacts(s.slackContacts);
   $("zpuid").value = s.zpuid;
 
   region.onchange = () => {
     updateConsoleLink();
     save({ accountsServer: region.value });
   };
-  for (const id of ["clientId", "clientSecret", "geminiKey", "zpuid"]) {
+  for (const id of ["clientId", "clientSecret", "geminiKey", "zpuid", "slackTeamId"]) {
     $(id).addEventListener("change", () => {
       save({ [id]: $(id).value.trim() });
       updateBadges();
@@ -172,4 +174,32 @@ function msg(kind, text) {
   const box = $("connectMsg");
   box.className = kind ? `banner ${kind}` : "banner hidden";
   box.textContent = text || "";
+}
+
+function renderContacts(contacts) {
+  const box = $("slackContacts");
+  const saveAll = () =>
+    save({
+      slackContacts: [...box.children].map((row) => ({ name: row.children[0].value.trim(), id: row.children[1].value.trim() })),
+    });
+  const addRow = ({ name = "", id = "" } = {}) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const field = (value, placeholder, extra) => {
+      const input = Object.assign(document.createElement("input"), { type: "text", value, placeholder, spellcheck: false });
+      input.className = extra;
+      input.addEventListener("change", saveAll);
+      return input;
+    };
+    const remove = Object.assign(document.createElement("button"), { type: "button", textContent: "Remove" });
+    remove.className = "btn sm ghost";
+    remove.onclick = () => {
+      row.remove();
+      saveAll();
+    };
+    row.append(field(name, "Name, e.g. Mr. Ehours", "grow"), field(id, "U0123ABCD or C0123ABCD", "grow"), remove);
+    box.append(row);
+  };
+  contacts.forEach(addRow);
+  $("addContact").onclick = () => addRow();
 }

@@ -194,6 +194,22 @@
     </section>
 
     <section class="card">
+      <h2>Ping your manager on Slack <span class="pill">Optional</span></h2>
+      <p class="muted">The <b>Ping on Slack</b> button in the Notes tab copies a ready-made message and opens your Slack chat with your manager. You just paste and send. Nothing is sent automatically, and no Slack login is stored.</p>
+      <label class="field"><span>Workspace ID</span><input id="slackTeamId" type="text" placeholder="T0123ABCD" spellcheck="false" /></label>
+      <div class="field" style="margin-top: 10px"><span>People and channels</span><div id="slackContacts" class="stack"></div></div>
+      <button id="addContact" class="btn sm" type="button" style="margin-top: 8px">Add person or channel</button>
+      <details class="fix">
+        <summary>Where do I find these?</summary>
+        <ol>
+          <li><b>Workspace ID:</b> open Slack in your browser. The address looks like <code>app.slack.com/client/T0123ABCD/...</code>. The part starting with <code>T</code> is the workspace ID.</li>
+          <li><b>Person:</b> in Slack, click their name, then the three dots, then <b>Copy member ID</b>. It starts with <code>U</code>.</li>
+          <li><b>Channel:</b> right-click the channel, choose <b>Copy link</b>, and take the last part of the link. It starts with <code>C</code>.</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="card">
       <h2><span class="num">4</span>Smarter typing <span class="pill">Optional</span></h2>
       <p class="muted">You can skip this step. The extension works fine without it.</p>
       <p>The <b>⚡ Type it</b> box lets you write something like <i>“2h on the checkout bug and 30m team meeting yesterday”</i>. Without anything here, it matches your words to your tasks on your own computer, which works for simple sentences. With a Gemini key, Gemini reads the sentence, picks the right tasks, splits it into separate entries and writes a tidy comment.</p>
