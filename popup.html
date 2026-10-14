@@ -33,6 +33,7 @@
         <button role="tab" data-tab="sent">Sent</button>
         <button role="tab" data-tab="assign">Assign</button>
         <button role="tab" data-tab="notes">Notes</button>
+        <button role="tab" data-tab="ask">Ask</button>
       </nav>
 
       <section data-view="log" class="view">
@@ -132,9 +133,21 @@
         <div class="stack">
           <label class="field"><span>Tasks to add</span><textarea id="notesAdd" rows="6" placeholder="Tasks I need to add to Zoho or log"></textarea></label>
           <label class="field"><span>Ask Mr. Ehours for</span><textarea id="notesAsk" rows="6" placeholder="Tasks I need to ask Mr. Ehours to assign me"></textarea></label>
-          <div class="row"><select id="slackTo" aria-label="Who to ping"></select><button id="slackBtn" class="btn sm" type="button">Ping on Slack</button></div>
-          <div id="slackMsg" class="small muted"></div>
           <p class="small muted" style="margin: 0">Saved automatically, only in this browser.</p>
+        </div>
+      </section>
+
+      <section data-view="ask" class="view hidden">
+        <p class="small muted" style="margin: 0 0 10px">Ask your manager for hours or tasks on Slack. It types the message and sends it right away.</p>
+        <div class="stack">
+          <label class="field"><span>Send to</span><select id="askTo" aria-label="Who to ask"></select></label>
+          <div class="row two">
+            <label class="field grow"><span>Hours needed</span><input id="askHours" type="text" placeholder="e.g. 4h" /></label>
+            <label class="field grow"><span>For (project or task)</span><input id="askFor" type="text" placeholder="e.g. Acme redesign" /></label>
+          </div>
+          <label class="field"><span class="row">Details <button id="askFromNotes" class="link" type="button">Use my notes</button></span><textarea id="askDetails" rows="4" placeholder="Anything they should know (optional)"></textarea></label>
+          <button id="askBtn" class="btn primary" type="button">Ask on Slack</button>
+          <div id="askMsg" class="small muted"></div>
         </div>
       </section>
 
