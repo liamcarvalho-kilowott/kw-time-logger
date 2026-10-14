@@ -30,7 +30,7 @@ export async function initSlackPing() {
     const ask = document.getElementById("notesAsk").value.trim();
     if (!slackTeamId || !id) return say("Add your workspace ID and people in Settings first.");
     if (!ask) return say("Write what to ask for first.");
-    const isChannel = /^[CGD]/i.test(id);
+    const isChannel = /^[CG]/i.test(id);
     const hello = isChannel ? "Hi!" : `Hi ${to.selectedOptions[0].textContent}!`;
     try {
       await navigator.clipboard.writeText(`${hello} Could you please assign me hours or tasks for the following?
@@ -41,8 +41,8 @@ Thanks!`);
     } catch {
       return say("Couldn't copy the message.");
     }
-    const kind = isChannel ? "channel" : "user";
-    chrome.tabs.create({ url: `slack://${kind}?team=${encodeURIComponent(slackTeamId)}&id=${encodeURIComponent(id)}` });
+    // The web client opens people, channels and DMs alike; the slack:// links were refused for some IDs.
+    chrome.tabs.create({ url: `https://app.slack.com/client/${encodeURIComponent(slackTeamId)}/${encodeURIComponent(id)}` });
     say("Copied. Paste it in Slack.");
   };
 }

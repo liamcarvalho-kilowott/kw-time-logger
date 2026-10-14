@@ -92,7 +92,7 @@ First real test: connect, then log **one** small entry with **Log now** and chec
 
 ## Notes tab
 
-`initSlackPing()` in `src/notes.js`: builds a message from the "Ask" box, copies it, and opens `slack://user?team=<T id>&id=<U id>` (or `slack://channel?...` when the ID starts with C/G) for the contact picked in `#slackTo` via `chrome.tabs.create`. Settings `slackTeamId` and `slackContacts` = `[{name, id}]` (card in options.html, rows built by `renderContacts` in options.js). No Slack app, token or webhook; the user pastes and sends. Real Slack deep link untested in a browser (only checked the URL and clipboard text with stubs). A real send needs a Slack app (webhook or user token) if wanted later.
+`initSlackPing()` in `src/notes.js`: builds a message from the "Ask" box, copies it, and opens `https://app.slack.com/client/<T id>/<id>` for the contact picked in `#slackTo` (works for U, C and D IDs; the `slack://` deep links were refused for a D ID). The greeting uses the saved name unless the ID starts with C/G (channel) via `chrome.tabs.create`. Settings `slackTeamId` and `slackContacts` = `[{name, id}]` (card in options.html, rows built by `renderContacts` in options.js). No Slack app, token or webhook; the user pastes and sends. The web URL was confirmed by the user to open a D chat; the whole button was only checked with stubs. A real send needs a Slack app (webhook or user token) if wanted later.
 
 `src/notes.js`: two textareas (`notesAdd`, `notesAsk`) autosaved to the `notes` storage key as `{add, ask}`. The "Mr. Ehours" label is hardcoded in `popup.html`. The tab bar was tightened in `popup.css` to fit six tabs in 390px.
 
