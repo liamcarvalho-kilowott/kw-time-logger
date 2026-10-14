@@ -172,9 +172,19 @@ async function typeIntoSlack(url, text) {
     await new Promise((r) => setTimeout(r, 750));
     try {
       const [res] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: type, args: [text] });
-      if (res?.result) return;
+      if (res?.result) break;
     } catch {} // page not ready yet
+    if (i === 39) return; // never found the composer; the message is still on the clipboard
   }
+  // Give the editor a moment to register the text, then press Send.
+  await new Promise((r) => setTimeout(r, 500));
+  const send = () => {
+    const button = document.querySelector('[data-qa="texty_send_button"]');
+    if (button && !button.disabled) return button.click();
+    const box = document.querySelector('[data-qa="message_input"] [contenteditable="true"]') || document.querySelector('.ql-editor[contenteditable="true"]');
+    box?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+  };
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: send }).catch(() => {});
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {

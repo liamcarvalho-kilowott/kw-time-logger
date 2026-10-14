@@ -40,6 +40,6 @@ Thanks!`;
     navigator.clipboard.writeText(text).catch(() => {}); // backup in case typing into Slack fails
     // The background worker does the typing, because this popup closes as soon as Slack opens.
     chrome.runtime.sendMessage({ type: "slack-ping", text, url: `https://app.slack.com/client/${encodeURIComponent(slackTeamId)}/${encodeURIComponent(id)}` });
-    say("Opening Slack. The message will be typed in; press Enter to send.");
+    say("Opening Slack. The message will be typed in and sent.");
   };
 }
