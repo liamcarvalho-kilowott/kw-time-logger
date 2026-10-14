@@ -154,7 +154,34 @@ chrome.notifications.onClicked.addListener((id) => {
 onChange(["queue"], updateBadge);
 onChange(["settings"], scheduleEndOfDay);
 
+/** Opens a Slack chat and types the message into its composer (you press Enter to send). */
+async function typeIntoSlack(url, text) {
+  const tab = await chrome.tabs.create({ url });
+  // The composer is a contenteditable box; Slack's page is a slow single-page app, so wait for it.
+  const type = (message) => {
+    const box = document.querySelector('[data-qa="message_input"] [contenteditable="true"]') || document.querySelector('.ql-editor[contenteditable="true"]');
+    if (!box) return false;
+    box.focus();
+    message.split("\n").forEach((line, i) => {
+      if (i) document.execCommand("insertLineBreak");
+      if (line) document.execCommand("insertText", false, line);
+    });
+    return true;
+  };
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 750));
+    try {
+      const [res] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: type, args: [text] });
+      if (res?.result) return;
+    } catch {} // page not ready yet
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+  if (msg?.type === "slack-ping") {
+    typeIntoSlack(msg.url, msg.text);
+    return false;
+  }
   if (msg?.type === "test-notification") {
     notify("test", ...joke("empty"));
     return false;

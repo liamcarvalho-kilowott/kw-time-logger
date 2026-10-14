@@ -32,17 +32,14 @@ export async function initSlackPing() {
     if (!ask) return say("Write what to ask for first.");
     const isChannel = /^[CG]/i.test(id);
     const hello = isChannel ? "Hi!" : `Hi ${to.selectedOptions[0].textContent}!`;
-    try {
-      await navigator.clipboard.writeText(`${hello} Could you please assign me hours or tasks for the following?
+    const text = `${hello} Could you please assign me hours or tasks for the following?
 
 ${ask}
 
-Thanks!`);
-    } catch {
-      return say("Couldn't copy the message.");
-    }
-    // The web client opens people, channels and DMs alike; the slack:// links were refused for some IDs.
-    chrome.tabs.create({ url: `https://app.slack.com/client/${encodeURIComponent(slackTeamId)}/${encodeURIComponent(id)}` });
-    say("Copied. Paste it in Slack.");
+Thanks!`;
+    navigator.clipboard.writeText(text).catch(() => {}); // backup in case typing into Slack fails
+    // The background worker does the typing, because this popup closes as soon as Slack opens.
+    chrome.runtime.sendMessage({ type: "slack-ping", text, url: `https://app.slack.com/client/${encodeURIComponent(slackTeamId)}/${encodeURIComponent(id)}` });
+    say("Opening Slack. The message will be typed in; press Enter to send.");
   };
 }
