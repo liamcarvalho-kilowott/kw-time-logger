@@ -8,6 +8,7 @@ A Chrome extension (Manifest V3, plain JavaScript, no framework) that logs hours
 
 Features built so far:
 - **Log tab:** project → task search (only *my* open tasks) → hours, date, billable, comment.
+- **⚡ Type it:** write "2h on the checkout bug - fixed retry and 30m 1 on 1 yesterday" → fills the form, one entry at a time. Matches on-device by default (`src/match.js`). With a Gemini key it uses Gemini (`src/ai.js`, `gemini-2.5-flash`, plain `fetch` to the REST API, JSON-schema output; falls back to on-device matching on any error).
 - **Queue:** entries wait until an end-of-day time (default 18:30), then auto-send or show a "Send" notification (`background.js`). **Log now** skips the queue. Catches up on next Chrome start if it was closed.
 - **Sent** history, **Todo** tab (a todo can link to a Zoho task; ⏱ Log turns it into a time entry).
 - Neubrutalist UI (yellow `#ffd60a`, black borders, hard shadows, Space Grotesk/Mono bundled in `fonts/`).
@@ -122,4 +123,4 @@ Edge and Brave (Chromium) run the normal build. Firefox uses `manifest.firefox.j
 
 ## EOD review list (v0.1.14)
 
-The "Type it" box and its review list were removed from the popup (popup.js/html/css). `src/match.js` and `aiParse` stay because the daily draft (`src/eod.js`) still uses them on the Notes "Tasks to add" text.
+"Type it" no longer fills the form one entry at a time. `fillFromText` → `openReview` (popup.js) shows every parsed entry in `#review` with a task select, ±15m buttons, billing chip, comment and ✕. `fitToDay` (src/time.js) fits each date into what is left of 8h (history + queue for that date): stated times kept unless they overflow (then scaled down), unstated entries share the rest weighted by Gemini's estimate. `aiParse` now returns `stated` and gets already-logged minutes per date. Enter (or Ctrl+Enter in a comment) = Approve & log (`send-now` per entry, failures stay in the list); Queue all = enqueue. Over 8h blocks approval. The list persists in the `lastReview` storage key. Hours logged in Zoho outside the extension are not counted. Tested in the preview with mock data only; the Gemini `stated` field is unverified against the live API.
