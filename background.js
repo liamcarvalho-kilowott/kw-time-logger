@@ -2,11 +2,15 @@
 
 import { get, set, getSettings, onChange } from "./src/storage.js";
 import { sendQueue, sendNow, summarize } from "./src/logbook.js";
-import { isoDate } from "./src/time.js";
+import { isoDate, humanDuration } from "./src/time.js";
+import { generateDraft, slackAsks } from "./src/eod.js";
+import { isSignedIn } from "./src/zoho.js";
 
 const ALARM = "end-of-day";
 const NOTE_REVIEW = "review-queue";
 const NOTE_RESULT = "send-result";
+const ALARM_DRAFT = "eod-draft";
+const NOTE_DRAFT = "draft-ready";
 
 function todaysCutoff() {
   return getSettings().then(({ endOfDay }) => {
@@ -43,6 +47,11 @@ const JOKES = {
     ["✅ Timesheet: handled", "{s} sent. Go touch some grass."],
     ["🚀 Zoho received your hours", "{s} sent. You're basically a productivity influencer."],
   ],
+  draft: [
+    ["⚡ Your timesheet wrote itself", "{s}. Approve and it goes to Zoho."],
+    ["📝 Today's hours, pre-filled", "{s}. One click to approve."],
+    ["🧾 EOD drafted while you weren't looking", "{s}. Check it and approve."],
+  ],
   failed: [
     ["💥 Zoho said no", "{n} sent, {f} bounced: {e}. Open the queue and give them another go."],
     ["🙈 Some hours got lost on the way", "{n} sent, {f} failed: {e}. Open the queue to retry."],
@@ -54,10 +63,60 @@ const joke = (kind, vars = {}) => {
   return [title, text.replace(/\{(\w)\}/g, (_, k) => vars[k] ?? "")];
 };
 
+async function scheduleDraft() {
+  const { eodDraftTime } = await getSettings();
+  const [h, m] = eodDraftTime.split(":").map(Number);
+  const at = new Date();
+  at.setHours(h, m, 0, 0);
+  if (at.getTime() <= Date.now()) at.setDate(at.getDate() + 1);
+  await chrome.alarms.clear(ALARM_DRAFT);
+  await chrome.alarms.create(ALARM_DRAFT, { when: at.getTime() });
+}
+
+/** Drafts today's timesheet and asks for approval on the notification, so the extension never has to be opened. */
+async function runDraft(force = false) {
+  const today = isoDate();
+  await set("lastDraft", today);
+  const { eodDraft } = await getSettings();
+  const weekend = [0, 6].includes(new Date().getDay());
+  if (!force && (!eodDraft || weekend) || !(await isSignedIn())) return;
+  try {
+    const { entries, asks } = await generateDraft();
+    if (!entries.length) return;
+    const lines = entries.slice(0, 3).map((e) => `${e.taskName} ${humanDuration(e.minutes)}`).join(", ");
+    // Tasks with no hours left: draft a Slack ask to each task creator, sent only when the user approves.
+    const { slackContacts } = await getSettings();
+    const { items, unmatched } = slackAsks(asks, slackContacts);
+    await set("pendingAsks", { date: today, items });
+    let extra = "";
+    if (items.length) extra += ` Also asks ${items.map((i) => i.name).join(", ")} on Slack for more hours.`;
+    if (unmatched.length) extra += ` No Slack contact saved for ${unmatched.join(", ")}.`;
+    notify(NOTE_DRAFT, ...joke("draft", { s: `${summarize(entries)}: ${lines}${entries.length > 3 ? "…" : ""}${extra}` }), [{ title: "Approve and send" }, { title: "Review" }]);
+  } catch (err) {
+    notify(NOTE_RESULT, "⚡ Couldn't draft your timesheet", err.message);
+  }
+}
+
+async function approveDrafts() {
+  const today = isoDate();
+  const queue = await get("queue");
+  const ids = queue.filter((e) => e.draft && e.date === today).map((e) => e.id);
+  await set("queue", queue.map((e) => (ids.includes(e.id) ? { ...e, draft: false } : e)));
+  const { sent, failed } = await sendQueue(ids);
+  reportResult(sent, failed);
+  // The drafted Slack asks go out with the same approval.
+  const { slackTeamId } = await getSettings();
+  const pending = await get("pendingAsks");
+  if (pending?.date === today && slackTeamId) {
+    await set("pendingAsks", null);
+    for (const a of pending.items) await typeIntoSlack(`https://app.slack.com/client/${encodeURIComponent(slackTeamId)}/${encodeURIComponent(a.id)}`, a.text);
+  }
+}
+
 async function runEndOfDay() {
   const today = isoDate();
   await set("lastEndOfDay", today);
-  const due = (await get("queue")).filter((e) => e.date <= today);
+  const due = (await get("queue")).filter((e) => e.date <= today && !e.draft);
   if (!due.length) {
     notify(NOTE_RESULT, ...joke("empty")); // always say something, even when there's nothing to send
     return;
@@ -84,8 +143,12 @@ function reportResult(sent, failed) {
 async function catchUp() {
   const today = isoDate();
   const missedToday = Date.now() >= (await todaysCutoff()).getTime() && (await get("lastEndOfDay")) !== today;
-  const olderEntries = (await get("queue")).some((e) => e.date < today);
+  const olderEntries = (await get("queue")).some((e) => e.date < today && !e.draft);
   if (missedToday || olderEntries) await runEndOfDay();
+  const { eodDraftTime } = await getSettings();
+  const [h, m] = eodDraftTime.split(":").map(Number);
+  const draftAt = new Date().setHours(h, m, 0, 0);
+  if (Date.now() >= draftAt && (await get("lastDraft")) !== today) await runDraft();
 }
 
 function notify(id, title, message, buttons) {
@@ -118,17 +181,24 @@ async function updateBadge() {
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await scheduleEndOfDay();
+  await scheduleDraft();
   await updateBadge();
   if (reason === "install") chrome.runtime.openOptionsPage();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await scheduleEndOfDay();
+  await scheduleDraft();
   await updateBadge();
   await catchUp();
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === ALARM_DRAFT) {
+    await runDraft();
+    await scheduleDraft();
+    return;
+  }
   if (alarm.name !== ALARM) return;
   await runEndOfDay();
   await scheduleEndOfDay();
@@ -136,7 +206,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 chrome.notifications.onButtonClicked.addListener(async (id, index) => {
   chrome.notifications.clear(id);
-  if (id === NOTE_REVIEW && index === 0) {
+  if (id === NOTE_DRAFT && index === 0) {
+    await approveDrafts();
+  } else if (id === NOTE_REVIEW && index === 0) {
     const today = isoDate();
     const due = (await get("queue")).filter((e) => e.date <= today);
     const { sent, failed } = await sendQueue(due.map((e) => e.id));
@@ -152,7 +224,7 @@ chrome.notifications.onClicked.addListener((id) => {
 });
 
 onChange(["queue"], updateBadge);
-onChange(["settings"], scheduleEndOfDay);
+onChange(["settings"], () => Promise.all([scheduleEndOfDay(), scheduleDraft()]));
 
 /** Opens a Slack chat and types the message into its composer (you press Enter to send). */
 async function typeIntoSlack(url, text) {
@@ -190,6 +262,10 @@ async function typeIntoSlack(url, text) {
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg?.type === "slack-ping") {
     typeIntoSlack(msg.url, msg.text);
+    return false;
+  }
+  if (msg?.type === "run-draft") {
+    runDraft(true);
     return false;
   }
   if (msg?.type === "test-notification") {

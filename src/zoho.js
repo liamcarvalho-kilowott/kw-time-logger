@@ -200,7 +200,22 @@ export async function listPortals() {
 
 // ---------- tasks ----------
 
-function slimTask(t) {
+/** Zoho hours come as "hh:mm" or a plain number of hours; returns minutes, or null when absent. */
+function toMinutes(v) {
+  const s = String(v ?? "").trim();
+  const hm = s.match(/^(\d+):(\d{2})$/);
+  if (hm) return +hm[1] * 60 + +hm[2];
+  return /^\d+(\.\d+)?$/.test(s) ? Math.round(parseFloat(s) * 60) : null;
+}
+
+// ponytail: field names (owners[].work / owners_and_work.work) are from Zoho's v3 docs, not verified against a real portal.
+function assignedMinutes(t, me) {
+  const ow = t.owners_and_work ?? {};
+  const mine = (ow.owners ?? []).find((o) => (me.zpuid && String(o.zpuid) === me.zpuid) || String(o.zuid) === me.zuid || (o.email || "").toLowerCase() === me.email);
+  return toMinutes(mine?.work ?? ow.work);
+}
+
+function slimTask(t, me) {
   return {
     id: String(t.id),
     key: t.prefix || "",
@@ -211,6 +226,9 @@ function slimTask(t) {
     status: t.status?.name ?? "",
     billable: t.billing_type === "billable",
     logged: t.log_hours?.total_hours ?? "",
+    assigned: assignedMinutes(t, me), // minutes assigned to me, or null
+    // ponytail: creator field names from memory of the v3 docs (created_by / created_person), unverified
+    creator: t.created_by?.name ?? t.created_person?.name ?? (typeof t.created_by === "string" ? t.created_by : ""),
   };
 }
 
@@ -270,7 +288,7 @@ export async function getMyTasks({ force = false } = {}) {
     }
   }
 
-  const slim = mine.map(slimTask);
+  const slim = mine.map((t) => slimTask(t, me));
   await set("me", me);
   await set("tasks", slim);
   await set("tasksFetchedAt", Date.now());

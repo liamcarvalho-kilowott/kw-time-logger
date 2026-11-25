@@ -18,6 +18,9 @@ const DEFAULT_SETTINGS = {
   portalId: "", // empty = the default portal
   zpuid: "", // Zoho Projects user id; found automatically, can be overridden
   endOfDay: "18:30",
+  eodDraft: true, // draft the day's timesheet at eodDraftTime and ask for approval
+  eodDraftTime: "18:00",
+  dailyMinutes: 480, // the daily target the draft fills up to
   autoSubmit: true, // false = remind me and wait for approval
   slackTeamId: "", // for the Notes tab "Ping on Slack" button
   slackContacts: [], // [{ name, id }] people (U...) or channels (C...) to ping
@@ -34,6 +37,7 @@ const DEFAULTS = {
   queue: [], // entries waiting for end of day
   history: [], // entries sent to Zoho (newest first, capped)
   lastDraft: null,
+  pendingAsks: null, // { date, items: [{ name, id, text }] } Slack asks waiting for the EOD approval
   notes: { add: "", ask: "" }, // free-text scratch notes, local only
   todos: [], // { id, text, taskId, done, createdAt, doneAt }
 };

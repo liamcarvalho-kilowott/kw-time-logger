@@ -101,9 +101,11 @@ function setTasks(tasks) {
   const select = $("project");
   const current = select.value;
   const projects = [...new Map(tasks.map((t) => [t.projectId, t.projectName])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const assignedFor = (list) => list.reduce((sum, t) => sum + (t.assigned ?? 0), 0);
+  const withHours = (n, list) => `${n} task${n === 1 ? "" : "s"}${assignedFor(list) ? `, ${humanDuration(assignedFor(list))} assigned` : ""}`;
   select.replaceChildren(
-    new Option(`All my projects (${tasks.length} tasks)`, ""),
-    ...projects.map(([id, name]) => new Option(name, id)),
+    new Option(`All my projects (${withHours(tasks.length, tasks)})`, ""),
+    ...projects.map(([id, name]) => new Option(`${name} (${withHours(tasks.filter((t) => t.projectId === id).length, tasks.filter((t) => t.projectId === id))})`, id)),
   );
   select.value = projects.some(([id]) => id === current) ? current : "";
   fillTodoTaskSelect(projects);
@@ -233,7 +235,7 @@ function selectTask(id) {
   }
   if ($("project").value && $("project").value !== task.projectId) $("project").value = task.projectId;
   if (!state.billingTouched) setBilling(task.billable, false);
-  const bits = [task.key, task.tasklist, $("project").value ? "" : task.projectName, task.logged && task.logged !== "00:00" ? `${task.logged} logged so far` : ""];
+  const bits = [task.key, task.tasklist, $("project").value ? "" : task.projectName, task.assigned ? `${humanDuration(task.assigned)} assigned` : "", task.logged && task.logged !== "00:00" ? `${task.logged} logged so far` : ""];
   $("taskMeta").textContent = bits.filter(Boolean).join(" · ");
   saveDraft();
 }
@@ -258,7 +260,7 @@ function openMenu() {
     ...(state.menuItems.length
       ? state.menuItems.map((t, i) => {
           const li = el("li", { role: "option", "aria-selected": String(i === 0) });
-          li.append(el("div", { class: "t" }, t.name), el("div", { class: "s" }, [t.key, t.tasklist, showProject ? t.projectName : ""].filter(Boolean).join(" · ")));
+          li.append(el("div", { class: "t" }, t.name), el("div", { class: "s" }, [t.key, t.tasklist, showProject ? t.projectName : "", t.assigned ? `${humanDuration(t.assigned)} assigned` : ""].filter(Boolean).join(" · ")));
           li.addEventListener("mousedown", (e) => {
             e.preventDefault();
             selectTask(t.id);
@@ -772,6 +774,7 @@ function entryCard(e) {
       el("span", { class: "dur" }, humanDuration(e.minutes)),
       el("span", {}, e.projectName),
       el("span", { class: `pill ${e.billable ? "ok" : ""}` }, e.billable ? "Billable" : "Non-billable"),
+      e.draft ? el("span", { class: "pill" }, e.estimated ? "Draft (estimated)" : "Draft") : null,
     ),
   );
   if (e.notes) card.append(el("div", { class: "notes" }, e.notes));

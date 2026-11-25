@@ -4,8 +4,8 @@
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const yest = new Date(today); yest.setDate(today.getDate() - 1);
   const tasks = [
-    { id: "1", key: "AC-T12", name: "Checkout payment bug", projectId: "p1", projectName: "Acme Store", tasklist: "Sprint 4", billable: true, logged: "06:30" },
-    { id: "2", key: "AC-T13", name: "Homepage redesign", projectId: "p1", projectName: "Acme Store", tasklist: "Design", billable: true, logged: "" },
+    { id: "1", key: "AC-T12", name: "Checkout payment bug", projectId: "p1", projectName: "Acme Store", tasklist: "Sprint 4", billable: true, logged: "06:30", assigned: 480 },
+    { id: "2", key: "AC-T13", name: "Homepage redesign", projectId: "p1", projectName: "Acme Store", tasklist: "Design", billable: true, logged: "", assigned: 240 },
     { id: "3", key: "HR-T11", name: "1 on 1 (Intra Team)", projectId: "p2", projectName: "HR / Team Building", tasklist: "HR General", billable: false, logged: "12:00" },
     { id: "4", key: "NA-T7", name: "Weekly budget optimization", projectId: "p3", projectName: "Northwind Ads", tasklist: "Paid media", billable: true, logged: "" },
     { id: "5", key: "NA-T9", name: "Monthly performance report", projectId: "p3", projectName: "Northwind Ads", tasklist: "Reporting", billable: true, logged: "" },

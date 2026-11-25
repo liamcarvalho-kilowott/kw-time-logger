@@ -32,6 +32,8 @@ async function init() {
   $("clientId").value = s.clientId;
   $("clientSecret").value = s.clientSecret;
   $("endOfDay").value = s.endOfDay;
+  $("eodDraft").checked = s.eodDraft;
+  $("eodDraftTime").value = s.eodDraftTime;
   document.querySelector(`input[name="mode"][value="${s.autoSubmit ? "auto" : "ask"}"]`).checked = true;
   $("geminiKey").value = s.geminiKey;
   $("slackTeamId").value = s.slackTeamId;
@@ -49,6 +51,9 @@ async function init() {
     });
     $(id).addEventListener("input", updateBadges);
   }
+  $("eodDraft").onchange = () => save({ eodDraft: $("eodDraft").checked });
+  $("eodDraftTime").onchange = () => $("eodDraftTime").value && save({ eodDraftTime: $("eodDraftTime").value });
+  $("draftNow").onclick = () => chrome.runtime.sendMessage({ type: "run-draft" });
   $("testNote").onclick = () => chrome.runtime.sendMessage({ type: "test-notification" });
   $("endOfDay").onchange = () => $("endOfDay").value && save({ endOfDay: $("endOfDay").value });
   for (const r of document.querySelectorAll('input[name="mode"]')) r.onchange = () => save({ autoSubmit: r.value === "auto" });
