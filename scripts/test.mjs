@@ -33,3 +33,10 @@ eq(fitToDay([{ minutes: 360, stated: true }, { minutes: 300, stated: true }], 48
 eq(sum(fitToDay([{ minutes: 300, stated: true }, { minutes: null }], 330)), 330, "respects what is already logged");
 eq(fitToDay([{ minutes: 60, stated: true }], 480), [60], "stated under 8h kept");
 eq(fitToDay([{ minutes: null }], 0), [0], "full day");
+// Real v3 task shape: per-person hours in owners[].work_values, total in total_work.
+const { assignedMinutes } = await import(base + "/src/zoho.js");
+const v3 = { owners_and_work: { total_work: "09:20", owners: [{ zuid: 1, zpuid: "11", email: "a@x.com", work_values: "05:00" }, { zuid: 2, zpuid: "22", email: "b@x.com", work_values: "04:20" }] } };
+eq(assignedMinutes(v3, { zpuid: "11", zuid: "1", email: "a@x.com" }), 300, "assigned: my share");
+eq(assignedMinutes(v3, { zpuid: "22", zuid: "2", email: "b@x.com" }), 260, "assigned: other owner's share");
+eq(assignedMinutes(v3, { zpuid: "99", zuid: "9", email: "z@x.com" }), 560, "assigned: falls back to total_work");
+eq(assignedMinutes({}, { zpuid: "1", zuid: "1", email: "" }), null, "assigned: none set");

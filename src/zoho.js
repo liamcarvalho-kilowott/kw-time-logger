@@ -208,11 +208,11 @@ function toMinutes(v) {
   return /^\d+(\.\d+)?$/.test(s) ? Math.round(parseFloat(s) * 60) : null;
 }
 
-// ponytail: field names (owners[].work / owners_and_work.work) are from Zoho's v3 docs, not verified against a real portal.
-function assignedMinutes(t, me) {
+// Real v3 shape (checked): owners_and_work.owners[i].work_values = "05:00" per person, owners_and_work.total_work = "09:20" for all owners.
+export function assignedMinutes(t, me) {
   const ow = t.owners_and_work ?? {};
   const mine = (ow.owners ?? []).find((o) => (me.zpuid && String(o.zpuid) === me.zpuid) || String(o.zuid) === me.zuid || (o.email || "").toLowerCase() === me.email);
-  return toMinutes(mine?.work ?? ow.work);
+  return toMinutes(mine?.work_values ?? ow.total_work);
 }
 
 function slimTask(t, me) {
@@ -227,7 +227,7 @@ function slimTask(t, me) {
     billable: t.billing_type === "billable",
     logged: t.log_hours?.total_hours ?? "",
     assigned: assignedMinutes(t, me), // minutes assigned to me, or null
-    // ponytail: creator field names from memory of the v3 docs (created_by / created_person), unverified
+    // created_by.name is in the real v3 response (checked)
     creator: t.created_by?.name ?? t.created_person?.name ?? (typeof t.created_by === "string" ? t.created_by : ""),
   };
 }
