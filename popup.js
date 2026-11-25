@@ -102,8 +102,12 @@ function setTasks(tasks) {
   const select = $("project");
   const current = select.value;
   const projects = [...new Map(tasks.map((t) => [t.projectId, t.projectName])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  const assignedFor = (list) => list.reduce((sum, t) => sum + (t.assigned ?? 0), 0);
-  const withHours = (n, list) => `${n} task${n === 1 ? "" : "s"}${assignedFor(list) ? `, ${humanDuration(assignedFor(list))} assigned` : ""}`;
+  const withHours = (n, list) => {
+    const known = list.filter((t) => t.assigned != null);
+    const assigned = known.reduce((sum, t) => sum + t.assigned, 0);
+    const left = known.reduce((sum, t) => sum + t.assigned - loggedMinutes(t), 0);
+    return `${n} task${n === 1 ? "" : "s"}${known.length ? `, ${humanDuration(assigned)} assigned, ${leftText(left)}` : ""}`;
+  };
   select.replaceChildren(
     new Option(`All my projects (${withHours(tasks.length, tasks)})`, ""),
     ...projects.map(([id, name]) => new Option(`${name} (${withHours(tasks.filter((t) => t.projectId === id).length, tasks.filter((t) => t.projectId === id))})`, id)),
@@ -114,6 +118,16 @@ function setTasks(tasks) {
   if (state.taskId && !state.byId.has(state.taskId)) selectTask("");
   if (state.review) renderReview();
 }
+
+// ---------- assigned and remaining hours ----------
+
+const loggedMinutes = (t) => {
+  const m = String(t.logged ?? "").match(/^(\d+):(\d{2})$/);
+  return m ? +m[1] * 60 + +m[2] : 0;
+};
+const leftText = (minutes) => (minutes >= 0 ? `${humanDuration(minutes)} left` : `${humanDuration(-minutes)} over`);
+/** "8h assigned · 1h 30m left" (or "over"), or "" when Zoho has no hours set on the task. */
+const hoursText = (t) => (t.assigned == null ? "" : `${humanDuration(t.assigned)} assigned · ${leftText(t.assigned - loggedMinutes(t))}`);
 
 // ---------- tabs ----------
 
@@ -246,7 +260,7 @@ function selectTask(id) {
   }
   if ($("project").value && $("project").value !== task.projectId) $("project").value = task.projectId;
   if (!state.billingTouched) setBilling(task.billable, false);
-  const bits = [task.key, task.tasklist, $("project").value ? "" : task.projectName, task.assigned ? `${humanDuration(task.assigned)} assigned` : "", task.logged && task.logged !== "00:00" ? `${task.logged} logged so far` : ""];
+  const bits = [task.key, task.tasklist, $("project").value ? "" : task.projectName, hoursText(task), task.logged && task.logged !== "00:00" ? `${task.logged} logged so far` : ""];
   $("taskMeta").textContent = bits.filter(Boolean).join(" · ");
   saveDraft();
 }
@@ -271,7 +285,7 @@ function openMenu() {
     ...(state.menuItems.length
       ? state.menuItems.map((t, i) => {
           const li = el("li", { role: "option", "aria-selected": String(i === 0) });
-          li.append(el("div", { class: "t" }, t.name), el("div", { class: "s" }, [t.key, t.tasklist, showProject ? t.projectName : "", t.assigned ? `${humanDuration(t.assigned)} assigned` : ""].filter(Boolean).join(" · ")));
+          li.append(el("div", { class: "t" }, t.name), el("div", { class: "s" }, [t.key, t.tasklist, showProject ? t.projectName : "", hoursText(t)].filter(Boolean).join(" · ")));
           li.addEventListener("mousedown", (e) => {
             e.preventDefault();
             selectTask(t.id);
