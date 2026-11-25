@@ -6,18 +6,9 @@ import { getMyTasks } from "./zoho.js";
 import { enqueue } from "./logbook.js";
 import { aiParse, aiExpand } from "./ai.js";
 import { localParse } from "./match.js";
-import { isoDate, humanDuration } from "./time.js";
+import { isoDate, humanDuration, split } from "./time.js";
 
 const STEP = 15; // minutes; entries are rounded to quarter hours
-
-/** Splits `total` minutes over weights, in STEP chunks, so the parts add up exactly. */
-function split(total, weights) {
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const parts = weights.map((w) => Math.floor((total * w) / sum / STEP) * STEP);
-  let left = total - parts.reduce((a, b) => a + b, 0);
-  for (let i = 0; left > 0; i = (i + 1) % parts.length, left -= STEP) parts[i] += STEP;
-  return parts;
-}
 
 /** Builds and queues the draft. Returns { already, entries } (entries is empty when there is nothing to draft). */
 export async function generateDraft() {

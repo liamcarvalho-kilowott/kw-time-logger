@@ -8,7 +8,7 @@ import { initNotes } from "./src/notes.js";
 import { initAsk } from "./src/ask.js";
 import { searchableSelect } from "./src/searchselect.js";
 import { attachDatePicker } from "./src/datepicker.js";
-import { isoDate, parseDuration, humanDuration, humanDate, toHHMM } from "./src/time.js";
+import { isoDate, parseDuration, humanDuration, humanDate, toHHMM, fitToDay } from "./src/time.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -21,8 +21,8 @@ const state = {
   taskId: "",
   billable: false,
   billingTouched: false,
-  drafts: [],
-  draftIndex: 0,
+  review: null, // entries from "Type it" waiting for approval
+  budgets: {}, // date -> { used, left } minutes of the 8h day
   editingId: null, // queue entry being edited
   menuIndex: 0,
   menuItems: [],
@@ -53,6 +53,7 @@ async function init() {
 
   setTasks(await get("tasks")); // instant, from cache
   await restoreDraft();
+  await restoreReview();
   renderQueue(await get("queue"));
   renderSent(await get("history"));
   renderTodos(await get("todos"));
@@ -111,6 +112,7 @@ function setTasks(tasks) {
   fillTodoTaskSelect(projects);
   get("todos").then(renderTodos); // task names on todos may have changed
   if (state.taskId && !state.byId.has(state.taskId)) selectTask("");
+  if (state.review) renderReview();
 }
 
 // ---------- tabs ----------
@@ -134,7 +136,16 @@ function wireForm() {
       fillFromText();
     }
   });
-  $("skipDraftBtn").onclick = () => nextDraft();
+  $("reviewApprove").onclick = approveReview;
+  $("reviewQueue").onclick = queueReview;
+  $("reviewCancel").onclick = closeReview;
+  $("review").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    if (e.target.tagName === "TEXTAREA" && !(e.metaKey || e.ctrlKey)) return;
+    if (e.target.tagName === "BUTTON") return;
+    e.preventDefault();
+    approveReview();
+  });
   $("refreshBtn").onclick = () => loadTasks(true);
 
   $("project").onchange = () => {
@@ -318,7 +329,7 @@ async function fillFromText() {
     if (state.settings.geminiKey) {
       try {
         const { aiParse } = await import("./src/ai.js");
-        drafts = await aiParse(text, state.tasks, isoDate(), state.settings.geminiKey);
+        drafts = await aiParse(text, state.tasks, isoDate(), state.settings.geminiKey, await loggedByDate());
       } catch (err) {
         drafts = localParse(text, state.tasks, isoDate());
         showMsg("warn", `Gemini wasn't reachable (${err.message}). Used on-device matching instead.`);
@@ -328,57 +339,211 @@ async function fillFromText() {
     }
   } finally {
     btn.disabled = false;
-    btn.replaceChildren("Fill form ", el("kbd", {}, "⌘↵"));
+    btn.replaceChildren("Match tasks ", el("kbd", {}, "⌘↵"));
   }
-  if (!drafts.length) return showMsg("warn", "Couldn't find any hours in that. Try “2h on …”.");
-  state.drafts = drafts;
-  state.draftIndex = 0;
-  loadDraft();
+  if (!drafts.length) return showMsg("warn", "Couldn't match that to any work. Try “2h on …”.");
+  await openReview(drafts);
 }
 
-function loadDraft() {
-  const d = state.drafts[state.draftIndex];
-  const many = state.drafts.length > 1;
-  $("draftNav").classList.toggle("hidden", !many);
-  if (many) $("draftLabel").textContent = `Entry ${state.draftIndex + 1} of ${state.drafts.length}: check it, then queue it`;
+// ---------- review: every entry from "Type it" in one list, fitted into the 8h day, sent on Enter ----------
 
-  state.billingTouched = d.billable !== null;
-  $("project").value = "";
-  selectTask(d.taskId);
-  if (d.billable !== null) setBilling(d.billable, false);
-  $("hours").value = d.minutes ? toHHMM(d.minutes).replace(/^0(\d)/, "$1") : "";
-  setDate(d.date);
-  $("notes").value = d.notes;
+const DAY = 8 * 60;
 
-  const suggestions = $("suggestions");
-  const alternatives = d.candidates.filter((id) => id !== d.taskId && state.byId.has(id)).slice(0, 3);
-  if (!d.taskId || !d.confident) {
-    suggestions.replaceChildren(
-      el("span", { class: "small muted" }, d.taskId ? "Best guess. Or:" : "Which task?"),
-      ...alternatives.map((id) => {
-        const chip = el("button", { class: "chip", type: "button", title: state.byId.get(id).projectName }, state.byId.get(id).name);
-        chip.onclick = () => selectTask(id);
-        return chip;
-      }),
-    );
-    suggestions.classList.toggle("hidden", !alternatives.length && Boolean(d.taskId));
-    if (!d.taskId) $("taskSearch").focus();
-  } else {
-    suggestions.classList.add("hidden");
+async function loggedByDate() {
+  const [history, queue] = await Promise.all([get("history"), get("queue")]);
+  const used = {};
+  for (const e of [...history, ...queue]) used[e.date] = (used[e.date] ?? 0) + e.minutes;
+  return used;
+}
+
+async function refreshBudgets(dates) {
+  const used = await loggedByDate();
+  state.budgets = Object.fromEntries(dates.map((d) => [d, { used: used[d] ?? 0, left: Math.max(0, DAY - (used[d] ?? 0)) }]));
+}
+
+async function openReview(drafts) {
+  const dates = [...new Set(drafts.map((d) => d.date))];
+  await refreshBudgets(dates);
+  for (const date of dates) {
+    const rows = drafts.filter((d) => d.date === date);
+    const fitted = fitToDay(rows.map((d) => ({ minutes: d.minutes, stated: d.stated ?? d.minutes != null })), state.budgets[date].left);
+    rows.forEach((d, i) => (d.minutes = fitted[i]));
   }
-  if (!d.minutes) $("hours").classList.add("invalid");
+  state.review = drafts.map((d) => ({ taskId: d.taskId, date: d.date, minutes: d.minutes, notes: d.notes || "", billable: d.billable, guess: !d.confident }));
+  renderReview();
+  hideMsg();
+  if (Object.values(state.budgets).some((b) => !b.left)) showMsg("warn", "That day already has 8h logged, so there's no time left to add.");
+  $("reviewApprove").focus();
+}
+
+async function restoreReview() {
+  const r = await get("lastReview");
+  if (!r?.rows?.length || Date.now() - r.savedAt > 12 * 60 * 60 * 1000) return;
+  state.review = r.rows;
+  await refreshBudgets([...new Set(r.rows.map((x) => x.date))]);
+  renderReview();
+}
+
+function closeReview() {
+  state.review = null;
+  renderReview();
+}
+
+function saveReview() {
+  set("lastReview", state.review ? { rows: state.review, savedAt: Date.now() } : null);
+}
+
+const dayTotal = (date) => state.review.filter((r) => r.date === date).reduce((s, r) => s + (r.minutes || 0), 0);
+
+function renderReview() {
+  const open = Boolean(state.review);
+  $("review").classList.toggle("hidden", !open);
+  $("form").classList.toggle("hidden", open);
+  saveReview();
+  if (!open) return;
+  const sorted = [...state.tasks].sort((a, b) => a.projectName.localeCompare(b.projectName) || a.name.localeCompare(b.name));
+  $("reviewList").replaceChildren(...state.review.map((r) => reviewRow(r, sorted)));
+  reviewChanged();
+}
+
+function reviewRow(r, sorted) {
+  const row = el("div", { class: `entry rv${r.guess ? " guess" : ""}` });
+  const billLabel = () => ((r.billable ?? state.byId.get(r.taskId)?.billable) ? "Billable" : "Non-billable");
+
+  const select = el("select", { "aria-label": "Task" }, new Option("Pick a task…", ""), ...sorted.map((t) => new Option(`${t.projectName} · ${t.name}`, t.id)));
+  select.value = state.byId.has(r.taskId) ? r.taskId : "";
+  select.onchange = () => {
+    r.taskId = select.value;
+    r.guess = false;
+    row.classList.remove("guess");
+    billing.textContent = billLabel();
+    reviewChanged();
+  };
+
+  const hours = el("input", { type: "text", inputmode: "decimal", "aria-label": "Hours", value: r.minutes ? humanDuration(r.minutes) : "" });
+  hours.oninput = () => {
+    r.minutes = parseDuration(hours.value);
+    reviewChanged();
+  };
+  hours.onblur = () => r.minutes && (hours.value = humanDuration(r.minutes));
+  const step = (delta) => {
+    const next = (r.minutes || 0) + delta;
+    if (next < 15) return;
+    if (delta > 0 && dayTotal(r.date) + delta > state.budgets[r.date].left) return showMsg("warn", `${humanDate(r.date)} is full: take time off another entry first.`);
+    r.minutes = next;
+    hours.value = humanDuration(next);
+    reviewChanged();
+  };
+  const minus = el("button", { class: "btn sm ghost", type: "button", title: "15 minutes less" }, "−");
+  const plus = el("button", { class: "btn sm ghost", type: "button", title: "15 minutes more" }, "+");
+  minus.onclick = () => step(-15);
+  plus.onclick = () => step(15);
+
+  const billing = el("button", { class: "chip", type: "button", title: "Switch billing" }, billLabel());
+  billing.onclick = () => {
+    r.billable = billLabel() !== "Billable";
+    billing.textContent = billLabel();
+    saveReview();
+  };
+
+  const notes = el("textarea", { rows: "2", placeholder: "Comment", "aria-label": "Comment" });
+  notes.value = r.notes;
+  notes.oninput = () => {
+    r.notes = notes.value;
+    saveReview();
+  };
+
+  const del = el("button", { class: "btn sm ghost danger", type: "button", title: "Drop this entry" }, "✕");
+  del.onclick = () => {
+    state.review.splice(state.review.indexOf(r), 1);
+    state.review.length ? renderReview() : closeReview();
+  };
+
+  row.append(
+    el("div", { class: "row" }, select, del),
+    el("div", { class: "row" }, minus, hours, plus, el("span", { class: "small muted grow" }, humanDate(r.date)), billing),
+    notes,
+  );
+  if (r.guess) row.append(el("div", { class: "small muted" }, r.taskId ? "Best guess: check the task." : "Couldn't tell which task: pick one."));
+  if (r.error) row.append(el("div", { class: "err" }, `Not sent: ${r.error}`));
+  return row;
+}
+
+function reviewProblems() {
+  const problems = [];
+  if (state.review.some((r) => !state.byId.has(r.taskId))) problems.push("Pick a task for every entry.");
+  if (state.review.some((r) => !r.minutes)) problems.push("Every entry needs hours.");
+  for (const [date, b] of Object.entries(state.budgets)) {
+    const over = dayTotal(date) - b.left;
+    if (over > 0) problems.push(`${humanDate(date)} is over 8h by ${humanDuration(over)}.`);
+  }
+  return problems;
+}
+
+function reviewChanged() {
+  saveReview();
+  $("reviewTotals").replaceChildren(
+    ...Object.entries(state.budgets).map(([date, b]) => {
+      const t = dayTotal(date);
+      return el(
+        "div",
+        { class: `row small${t > b.left ? " over" : ""}` },
+        el("b", { class: "grow" }, humanDate(date)),
+        el("span", {}, `${humanDuration(t)}${b.used ? ` + ${humanDuration(b.used)} already` : ""} = ${humanDuration(t + b.used)} of 8h`),
+      );
+    }),
+  );
+  const problems = reviewProblems();
+  $("reviewApprove").disabled = problems.length > 0;
+  $("reviewQueue").disabled = problems.length > 0;
+  $("reviewHint").textContent = problems[0] || "Check it, then press Enter to log it all in Zoho.";
+}
+
+function reviewEntry(r) {
+  const task = state.byId.get(r.taskId);
+  return { taskId: task.id, projectId: task.projectId, taskName: task.name, taskKey: task.key, projectName: task.projectName, date: r.date, minutes: r.minutes, billable: r.billable ?? task.billable, notes: r.notes.trim() };
+}
+
+const entries = (n) => `${n} entr${n === 1 ? "y" : "ies"}`;
+
+async function approveReview() {
+  if (!state.review || reviewProblems().length) return;
+  const btn = $("reviewApprove");
+  btn.disabled = true;
+  btn.replaceChildren(el("span", { class: "spinner" }), " Logging…");
+  let sent = 0;
+  let minutes = 0;
+  for (const r of [...state.review]) {
+    try {
+      const res = await chrome.runtime.sendMessage({ type: "send-now", entry: reviewEntry(r) });
+      if (!res?.ok) throw new Error(res?.error || "No answer from the extension.");
+      state.review.splice(state.review.indexOf(r), 1);
+      sent++;
+      minutes += r.minutes;
+    } catch (err) {
+      r.error = err.message;
+    }
+  }
+  btn.replaceChildren("Approve & log ", el("kbd", {}, "↵"));
+  if (!state.review.length) {
+    closeReview();
+    $("say").value = "";
+    saveDraft();
+    return showMsg("ok", `Logged ${entries(sent)} (${humanDuration(minutes)}) in Zoho.`);
+  }
+  await refreshBudgets(Object.keys(state.budgets));
+  renderReview();
+  showMsg("danger", `${entries(state.review.length)} didn't go through${sent ? ` (${sent} did)` : ""}. Fix and press Enter again.`);
+}
+
+async function queueReview() {
+  if (!state.review || reviewProblems().length) return;
+  const list = state.review.map(reviewEntry);
+  await enqueue(list);
+  closeReview();
+  $("say").value = "";
   saveDraft();
-}
-
-function nextDraft() {
-  if (state.draftIndex + 1 < state.drafts.length) {
-    state.draftIndex++;
-    loadDraft();
-  } else {
-    state.drafts = [];
-    $("draftNav").classList.add("hidden");
-    resetForm();
-  }
+  showMsg("ok", `Queued ${entries(list.length)} (${humanDuration(list.reduce((s, e) => s + e.minutes, 0))}).`);
 }
 
 // ---------- queue / log ----------
@@ -454,13 +619,6 @@ async function logNow() {
 }
 
 function afterSave() {
-  if (state.drafts.length > 1 && state.draftIndex + 1 < state.drafts.length) {
-    state.draftIndex++;
-    loadDraft();
-    return;
-  }
-  state.drafts = [];
-  $("draftNav").classList.add("hidden");
   $("say").value = "";
   resetForm();
 }
@@ -653,8 +811,7 @@ function editTodoText(todo, node) {
 
 function logFromTodo(todo) {
   state.editingId = null;
-  state.drafts = [];
-  $("draftNav").classList.add("hidden");
+  closeReview();
   $("queueBtn").textContent = "Add to queue";
   $("project").value = "";
   selectTask(state.byId.has(todo.taskId) ? todo.taskId : "");
@@ -667,8 +824,7 @@ function logFromTodo(todo) {
 
 function editQueued(e) {
   state.editingId = e.id;
-  state.drafts = [];
-  $("draftNav").classList.add("hidden");
+  closeReview();
   $("project").value = "";
   selectTask(e.taskId);
   $("hours").value = toHHMM(e.minutes).replace(/^0(\d)/, "$1");
@@ -783,8 +939,10 @@ function entryCard(e) {
 
 // ---------- helpers ----------
 
+const msgBox = () => $(state.review ? "reviewMsg" : "formMsg");
+
 function showMsg(kind, text) {
-  const box = $("formMsg");
+  const box = msgBox();
   box.className = `banner ${kind}`;
   box.textContent = text;
   if (kind === "ok") setTimeout(() => box.textContent === text && hideMsg(), 4000);
@@ -792,11 +950,11 @@ function showMsg(kind, text) {
 
 /** Drops a validation error once the user starts fixing it. */
 function clearProblem() {
-  if ($("formMsg").classList.contains("danger")) hideMsg();
+  if (msgBox().classList.contains("danger")) hideMsg();
 }
 
 function hideMsg() {
-  $("formMsg").className = "banner hidden";
+  msgBox().className = "banner hidden";
 }
 
 function emptyState(emoji, text) {

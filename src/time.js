@@ -80,3 +80,34 @@ export function findDate(text, today = isoDate()) {
   }
   return null;
 }
+
+/** Splits `total` minutes over weights, in `step` chunks, so the parts add up exactly. */
+export function split(total, weights, step = 15) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const parts = weights.map((w) => Math.floor((total * w) / sum / step) * step);
+  let left = total - parts.reduce((a, b) => a + b, 0);
+  for (let i = 0; left > 0; i = (i + 1) % parts.length, left -= step) parts[i] += step;
+  return parts;
+}
+
+/**
+ * Fits one day's entries into `budget` minutes (what's left of the 8h day).
+ * Stated times are kept unless together they overflow the day, then they shrink proportionally.
+ * Unstated entries share what's left, weighted by their estimate (`minutes`, default 1h).
+ * Never returns more than `budget` in total.
+ */
+export function fitToDay(entries, budget, step = 15) {
+  budget = Math.floor(Math.max(0, budget) / step) * step;
+  const out = entries.map(() => 0);
+  const fixed = [], free = [];
+  entries.forEach((e, i) => (e.stated && e.minutes ? fixed : free).push(i));
+  const fixedSum = fixed.reduce((s, i) => s + entries[i].minutes, 0);
+  if (fixedSum > budget) {
+    split(budget, fixed.map((i) => entries[i].minutes), step).forEach((m, k) => (out[fixed[k]] = m));
+    return out;
+  }
+  for (const i of fixed) out[i] = entries[i].minutes;
+  const pool = Math.floor((budget - fixedSum) / step) * step;
+  if (free.length && pool) split(pool, free.map((i) => entries[i].minutes || 60), step).forEach((m, k) => (out[free[k]] = m));
+  return out;
+}

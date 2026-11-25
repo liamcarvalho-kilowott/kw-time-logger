@@ -137,3 +137,12 @@ label.field > span.row { display: flex; }
 .tabs { gap: 1px; padding: 10px 4px 0; }
 .tabs button { flex: 1 1 auto; justify-content: center; padding: 6px 4px 8px; font-size: 11.5px; gap: 3px; }
 .tabs button[aria-selected="true"] { padding-bottom: 10.5px; }
+
+/* review list (Type it -> several entries, fitted into the 8h day) */
+.rv { display: flex; flex-direction: column; gap: 6px; }
+.rv.guess { border-color: var(--danger); border-style: dashed; }
+.rv select { flex: 1; min-width: 0; }
+.rv input[type="text"] { width: 72px; text-align: center; font-family: var(--mono); }
+.rv textarea { width: 100%; resize: vertical; }
+.review-totals { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.review-totals .over { color: var(--danger); font-weight: 700; }

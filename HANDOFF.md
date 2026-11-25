@@ -120,3 +120,7 @@ Edge and Brave (Chromium) run the normal build. Firefox uses `manifest.firefox.j
 
 - v2: activity suggestions from tab/site time; show hours already logged in Zoho today (`GET .../projects/{id}/logs/`); start/stop timer; menu-bar app with a global hotkey reusing `src/`.
 - Work-laptop check: confirm company policy allows the Gemini key option (it sends the typed sentence and open task names to Google; free-tier data may be used by Google to improve its products).
+
+## EOD review list (v0.1.14)
+
+"Type it" no longer fills the form one entry at a time. `fillFromText` → `openReview` (popup.js) shows every parsed entry in `#review` with a task select, ±15m buttons, billing chip, comment and ✕. `fitToDay` (src/time.js) fits each date into what is left of 8h (history + queue for that date): stated times kept unless they overflow (then scaled down), unstated entries share the rest weighted by Gemini's estimate. `aiParse` now returns `stated` and gets already-logged minutes per date. Enter (or Ctrl+Enter in a comment) = Approve & log (`send-now` per entry, failures stay in the list); Queue all = enqueue. Over 8h blocks approval. The list persists in the `lastReview` storage key. Hours logged in Zoho outside the extension are not counted. Tested in the preview with mock data only; the Gemini `stated` field is unverified against the live API.
